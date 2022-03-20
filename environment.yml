@@ -1,0 +1,22 @@
+name: notebooks
+channels:
+  - rapidsai
+  - nvidia
+  - conda-forge
+dependencies:
+  - brunette=*
+  - flake8=*
+  - mypy=*
+  - pytest=*
+  - numpy=*
+  - pandas=*
+  - matplotlib=*
+  - seaborn=*
+  - scikit-learn=*
+  - joblib=*
+  - jupyter=*
+  - jupyterthemes=*
+  - jupytext=*
+  - cudf=21.12
+  - cuml=21.12
+  - cudatoolkit=11.5

@@ -1,0 +1,10 @@
+__pycache__/
+/.pytest_cache/
+/.mypy_cache/
+/.storage/
+.ipynb_checkpoints/
+/.jupyter/custom/
+/.jupyter/migrated
+/.ipython/profile_default/history.sqlite
+*.ipynb
+/envs/

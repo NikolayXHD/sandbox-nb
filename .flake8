@@ -1,0 +1,12 @@
+[flake8]
+exclude = .mypy_cache,.pytest_cache,.storage,.unversioned,__pycache__,.ipynb_checkpoints,envs
+;E721 do not compare types
+;E741 ambiguous variable name
+;E743 ambiguous function definition
+;F401 '.client.*' imported but unused
+;W503 line break before binary operator
+;E203 whitespace before ':'
+ignore = E721,E741,E743,F401,W503,E203
+per-file-ignores =
+    notebook.py:E402,F811
+    .jupyter/jupyter_notebook_config.py:E265,E266,E501,W291,F821
