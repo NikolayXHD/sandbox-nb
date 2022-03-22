@@ -15,7 +15,7 @@ from .memory import control_output
 class CrossValidation:
     def __init__(
         self,
-        memory_: Memory,
+        memory_: Memory | None,
         test_histogram_bins: typing.Tuple[int, int] | None = None,
         regressor_supports_cupy: bool = True,
         verbose: bool = False,
@@ -23,6 +23,7 @@ class CrossValidation:
     ):
         self._cache = cache
         if cache:
+            assert memory_ is not None
             self._splits_cache = control_output(
                 memory_.cache(_splits), verbose=verbose
             )
@@ -30,6 +31,7 @@ class CrossValidation:
                 memory_.cache(histogram.create_histogram), verbose=verbose
             )
         else:
+            assert memory_ is None
             self._splits_cache = _splits
             self._create_histogram_cache = histogram.create_histogram
 
@@ -98,7 +100,10 @@ class CrossValidation:
             if w_test is not None:
                 w_test = w_test.get()
 
-        estimator.fit(X_train, y_train, sample_weight=w_train)
+        if w_train is None:
+            estimator.fit(X_train, y_train)
+        else:
+            estimator.fit(X_train, y_train, sample_weight=w_train)
         y_pred = estimator.predict(X_test)
         assert y_test.shape[0] == y_pred.shape[0]
         residual_squares = (y_test - y_pred) ** 2
@@ -162,11 +167,13 @@ def _splits(
 ]:
     splits = []
     for test, train in cv.split(X, y):
-        X_train = X[train]
-        X_test = X[test]
+        test_cu = cupy.array(test)
+        train_cu = cupy.array(train)
+        X_train = X[train_cu, ...]
+        X_test = X[test_cu, ...]
 
-        y_train = y[train]
-        y_test = y[test]
+        y_train = y[train_cu]
+        y_test = y[test_cu]
 
         if w is None:
             w_train = None
