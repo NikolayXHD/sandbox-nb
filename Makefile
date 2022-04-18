@@ -33,11 +33,12 @@ test-failed:
 
 check: format lint test
 
+# conda install mamba -n base -c conda-forge
 env-create:
-	conda env create -p ./envs -f environment.yml
+	mamba env create -p ./envs -f environment.yml
 
 env-update:
-	conda env update -p ./envs -f environment.yml
+	mamba env update -p ./envs -f environment.yml
 
 
 SHELL := /usr/bin/bash
