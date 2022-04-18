@@ -4,7 +4,6 @@ channels:
   - nvidia
   - conda-forge
 dependencies:
-  - brunette=*
   - flake8=*
   - mypy=*
   - pytest=*
@@ -15,8 +14,13 @@ dependencies:
   - scikit-learn=*
   - joblib=*
   - jupyter=*
+  - jupyterlab=*
   - jupyterthemes=*
   - jupytext=*
   - cudf=21.12
   - cuml=21.12
   - cudatoolkit=11.5
+  - pip=*
+  - pip:
+      - brunette==0.2.0
+  - python-language-server[all]=0.36.2
