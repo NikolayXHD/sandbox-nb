@@ -6,5 +6,7 @@ __pycache__/
 /.jupyter/custom/
 /.jupyter/migrated
 /.ipython/profile_default/history.sqlite
+/.jupyter/lab/user-settings/
+/.jupyter/lab/workspaces/
 *.ipynb
 /envs/

@@ -1,6 +1,9 @@
 jupyter:
 	conda run -p ./envs jupyter notebook
 
+jupyterlab:
+	conda run -p ./envs jupyter lab
+
 clear:
 	rm -rf ./.mypy_cache ./.pytest_cache
 	find . -not \( -type d -name .storage -prune \) -type f -name "*.pyc" -print0 | xargs -r0 rm
