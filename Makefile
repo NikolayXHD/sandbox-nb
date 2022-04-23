@@ -1,8 +1,8 @@
 jupyter:
-	conda run -p ./envs jupyter notebook
+	conda run --live-stream -p ./envs jupyter notebook
 
 jupyterlab:
-	conda run -p ./envs jupyter lab
+	conda run --live-stream -p ./envs jupyter lab
 
 clear:
 	rm -rf ./.mypy_cache ./.pytest_cache
@@ -11,25 +11,26 @@ clear:
 # install brunette into system python3 executable:
 # > python3 -m pip install brunette==0.2.0 black
 format:
-	python3 -m brunette . --exclude '\.jupyter/' \
-      --single-quotes \
-      --target-version py38 \
-      --line-length 79
+	conda run --live-stream -p ./envs python -m brunette . \
+--exclude '\.jupyter/' \
+--single-quotes \
+--target-version py38 \
+--line-length 79
 
 lint:
-	conda run -p ./envs python -m flake8
-	conda run -p ./envs python -m mypy notebooks tests
+	conda run --live-stream -p ./envs python -m flake8
+	conda run --live-stream -p ./envs python -m mypy notebooks tests
 
 test:
-	conda run -p ./envs python -m pytest -l tests
+	conda run --live-stream -p ./envs python -m pytest -l tests
 
 # input: make test-v
 # result: pipenv run python -m pytest -lv tests
 test-%:
-	conda run -p ./envs python -m pytest -l$* tests
+	conda run --live-stream -p ./envs python -m pytest -l$* tests
 
 test-failed:
-	conda run -p ./envs python -m pytest -l --last-failed tests
+	conda run --live-stream -p ./envs python -m pytest -l --last-failed tests
 
 check: format lint test
 
