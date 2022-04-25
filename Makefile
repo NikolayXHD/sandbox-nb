@@ -1,15 +1,13 @@
 jupyter:
-	conda run --live-stream -p ./envs jupyter notebook
+	conda run --live-stream -p ./envs jupyter notebook --no-browser
 
 jupyterlab:
-	conda run --live-stream -p ./envs jupyter lab
+	conda run --live-stream -p ./envs jupyter lab --no-browser
 
 clear:
 	rm -rf ./.mypy_cache ./.pytest_cache
 	find . -not \( -type d -name .storage -prune \) -type f -name "*.pyc" -print0 | xargs -r0 rm
 
-# install brunette into system python3 executable:
-# > python3 -m pip install brunette==0.2.0 black
 format:
 	conda run --live-stream -p ./envs python -m brunette . \
 --exclude '\.jupyter/' \
