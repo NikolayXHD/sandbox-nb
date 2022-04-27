@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.7
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -35,35 +35,18 @@ from notebooks.regression_cu import histogram
 
 PERCENTILES = [25, 50, 75]
 
+
 def build_df(directory: Path):
     df = cudf.concat(
         cudf.read_feather(file) for file in directory.glob('*.feather')
     )
-    # df.drop('list_level', axis=1, inplace=True)
-    # df.rename({'annual_total_profit_ln': 'profit'}, axis=1, inplace=True)
     df = df.sort_values(by='t')
-    # df['indicator'] = df['indicator'].astype(np.float32)
-    # for p in PERCENTILES:        
-    #     df[f'ind_percentile_{p}'] = df[f'ind_percentile_{p}'].astype(np.float32)
-    # df['profit'] = df['profit'].astype(np.float32)
     return df
 
 
-def separate_features(df_i):
-    return (
-        df_i[
-            [
-                'indicator',
-                *(f'ind_percentile_{p}' for p in PERCENTILES),
-            ]            
-        ].values,
-        df_i['profit'].values,
-    )
-
-
-def plot_2d_hist(df_k, n_days, percentile):
+def plot_2d_hist(df_k, n_days):
     ax = sns.histplot(
-        x=df_k[f'ind_percentile_{percentile}'].values.get(),
+        x=df_k['market_indicator'].values.get(),
         y=df_k['profit'].values.get(),
         bins=(200, 100),
     )
@@ -104,7 +87,7 @@ memory_ = Memory(
 
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
-        'regression-percentiles',
+        'regression-market-indicator',
         'moex',
         'dohodru',
         'rub',
@@ -116,13 +99,27 @@ delay_to_dir = {
 
 delay_to_df = {delay: build_df(path) for delay, path in delay_to_dir.items()}
 
+
+# %%
+def separate_features(df_i):
+    return (
+        df_i[
+            [
+                # 'indicator',
+                'market_indicator',
+            ]
+        ].values,
+        df_i['profit'].values,
+    )
+
+
 delay_to_Xy = {
     delay: separate_features(df) for delay, df in delay_to_df.items()
 }
 
 # %%
 for num_days, df_k in delay_to_df.items():
-    plot_2d_hist(df_k, num_days, 25)
+    plot_2d_hist(df_k, num_days)
 
 # %% pycharm={"name": "#%%\n"}
 # # %%timeit -n1 -r1
@@ -192,22 +189,24 @@ CV_USES_HISTOGRAM = False
 CACHE = False
 MEMORY = memory_ if CACHE else None
 
+
 def create_estimator_bins(delay):
-    # cuml.ensemble.RandomForestRegressor does not support sample_weights
-#     return histogram.Histogram2dRegressionWrapper(
-#         bins=(400, 1),
-#         regressor_supports_cupy=False,
-#         memory_=memory_,
-#         verbose=False,
-#         cache=CACHE,
-#         regressor=ensemble.ExtraTreesRegressor(
-#             n_estimators=100,
-#             bootstrap=True,
-#             max_samples=0.5,
-#             n_jobs=-1,
-#             **delay_to_kwargs[delay],
-#         ),
-#     )
+    #     cuml.ensemble.RandomForestRegressor does not support sample_weights
+
+    #     return histogram.Histogram2dRegressionWrapper(
+    #         bins=(400, 1),
+    #         regressor_supports_cupy=False,
+    #         memory_=memory_,
+    #         verbose=False,
+    #         cache=CACHE,
+    #         regressor=ensemble.ExtraTreesRegressor(
+    #             n_estimators=100,
+    #             bootstrap=True,
+    #             max_samples=0.5,
+    #             n_jobs=-1,
+    #             **delay_to_kwargs[delay],
+    #         ),
+    #     )
     return cuml.ensemble.RandomForestRegressor(
         n_estimators=100,
         bootstrap=True,
@@ -268,22 +267,22 @@ for num_days, reg_bin in delay_to_regression_bins.items():
     print('# ' + label.replace('$R^2_{oos}$ ', ''))
     _ = reg_bin.fit(X, y)
 
-# for num_days, reg_bin in delay_to_regression_bins.items():
-#     scores = delay_to_score_bins[num_days]
-#     style = delay_to_style[num_days]
-#     plot_model(
-#         reg_bin,
-#         style,
-#         #         min_x=-0.5,
-#         #         max_x=+0.5,
-#         label=get_label(num_days, scores),
-#     )
+for num_days, reg_bin in delay_to_regression_bins.items():
+    scores = delay_to_score_bins[num_days]
+    style = delay_to_style[num_days]
+    plot_model(
+        reg_bin,
+        style,
+        #         min_x=-0.5,
+        #         max_x=+0.5,
+        label=get_label(num_days, scores),
+    )
 
-# fig = plt.gca().figure
-# fig.legend()
-# fig.set_figwidth(18)
-# fig.set_figheight(6)
-# plt.show()
+fig = plt.gca().figure
+fig.legend()
+fig.set_figwidth(18)
+fig.set_figheight(6)
+plt.show()
 
 # extra_tree hist:no  cv_n_splits: 3
 # Ожидаемый доход, 7   д.  0.00056 ± 0.00065
