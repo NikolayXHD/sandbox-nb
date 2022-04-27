@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.7
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -35,22 +35,17 @@ def build_df(directory: Path):
     df = pd.concat(
         pd.read_feather(file) for file in directory.glob('*.feather')
     )
-    df = df[df['list_level'] <= 2]
-    df.drop('list_level', axis=1, inplace=True)
-    df.rename({'annual_total_profit_ln': 'profit'}, axis=1, inplace=True)
     df.sort_values(by=['t'], inplace=True)
     return df
 
 
-def separate_features(df_i):
-    return (
-        df_i['indicator'].values.reshape(-1, 1),
-        df_i['profit'].values,
-    )
-
-
 def plot_2d_hist(df_k, n_days):
-    ax = sns.histplot(data=df_k, x='indicator', y='profit', bins=(200, 100))
+    ax = sns.histplot(
+        data=df_k,
+        x='market_indicator',
+        y='profit',
+        bins=(200, 100),
+    )
     ax.figure.set_figwidth(18)
     ax.figure.set_figheight(9)
     ax.grid(True)
@@ -59,26 +54,19 @@ def plot_2d_hist(df_k, n_days):
     plt.show()
 
 
-def plot_model(reg_k, *args, min_x=-1, max_x=+1, **kwargs):
-    X_pred = np.linspace(min_x, max_x, num=1000)
-    y_pred = reg_k.predict(X_pred.reshape(-1, 1))
-    plt.plot(X_pred, y_pred, *args, **kwargs)
-    plt.gca().grid(True)
-
-
 delay_to_style = {
     7: ':',
     30: '--',
     180: '-',
 }
 
+time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
+
 PWD = Path(os.path.dirname(os.path.realpath('__file__')))
 CACHE_STORAGE_PATH = PWD.joinpath('..', '..', '.storage', 'cache')
 OUTPUT_STORAGE_PATH = PWD.joinpath(
     '..', '..', '..', 'sandbox', '.storage', 'output'
 )
-
-time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
 
 memory_ = Memory(
     str(CACHE_STORAGE_PATH),
@@ -88,7 +76,7 @@ memory_ = Memory(
 
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
-        'regression',
+        'regression-market-indicator',
         'moex',
         'dohodru',
         'rub',
@@ -100,16 +88,22 @@ delay_to_dir = {
 
 delay_to_df = {delay: build_df(path) for delay, path in delay_to_dir.items()}
 
+
+# %%
+def separate_features(df_i):
+    return (
+        df_i[['indicator', 'market_indicator']].values,
+        df_i['profit'].values,
+    )
+
+
 delay_to_Xy = {
     delay: separate_features(df) for delay, df in delay_to_df.items()
 }
 
-# %% pycharm={"name": "#%%\n"}
+# %% pycharm={"name": "#%%\n"} jupyter={"source_hidden": true, "outputs_hidden": true} tags=[]
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
-
-# Проверим, похожи ли огрубленные гистограммы, которые мы передадим
-# в модель, на исходные.
 
 fig, axes = plt.subplots(1, len(delay_to_Xy), figsize=(24, 7))
 fig.suptitle('Дискретизированные значения')
@@ -146,6 +140,31 @@ for i, (num_days, (X, y)) in enumerate(delay_to_Xy.items()):
     ax.set_title(f'доход через {num_days} дней, в пересчёте на 1 год')
 plt.show()
 
+# %% jupyter={"source_hidden": true, "outputs_hidden": true} tags=[]
+from notebooks.regression.k_neighbors import RadiusNeighborsWeightedRegressor
+from scipy.stats import norm 
+
+x = np.linspace(-1, 1, num=21)
+X = x.reshape(-1, 1)
+y = np.sign(X)
+
+radius = 0.1
+
+regressor = RadiusNeighborsWeightedRegressor(
+    radius=3*radius,
+    weights=lambda d: [norm.pdf(d_arr / radius) for d_arr in d],
+    n_jobs=-1,
+)
+
+regressor.fit(X, y)
+
+x_pred = np.linspace(-1, 1, num=81)
+X_pred = x_pred.reshape(-1, 1)
+y_pred = regressor.predict(X_pred)
+
+plt.plot(x_pred, y_pred)
+plt.show()
+
 # %% pycharm={"name": "#%%\n"}
 # # %%timeit -n1 -r1
 
@@ -159,31 +178,30 @@ plt.show()
 # 2.76 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 
 from sklearn import ensemble
+from notebooks.regression.k_neighbors import RadiusNeighborsWeightedRegressor
+from scipy.stats import norm
 
-delay_to_kwargs = {
-    7: dict(min_weight_fraction_leaf=0.0010),
-    30: dict(min_weight_fraction_leaf=0.0010),
-    180: dict(min_weight_fraction_leaf=0.0010),
-}
-
-CV = False
+CV = True
 CV_USES_HISTOGRAM = True
 CACHE = True
 
 
 def create_estimator_bins(delay):
+    radius = 0.02
+
+    def _w(d):
+        return [norm.pdf(d_arr / radius) for d_arr in d]
+
     return histogram.Histogram2dRegressionWrapper(
-        bins=(200, 1),
+        bins=(100, 100, 1),
         shuffle=False,
         memory_=memory_,
         verbose=False,
         cache=CACHE,
-        regressor=ensemble.ExtraTreesRegressor(
-            n_estimators=100,
-            bootstrap=True,
-            max_samples=0.5,
+        regressor = RadiusNeighborsWeightedRegressor(
+            radius=0.35,
+            weights=_w,
             n_jobs=-1,
-            **delay_to_kwargs[delay],
         ),
     )
 
@@ -191,7 +209,7 @@ def create_estimator_bins(delay):
 def get_cv():
     if CV_USES_HISTOGRAM:
         return cross_validation.CrossValidation(
-            test_histogram_bins=(200, 200),
+            test_histogram_bins=(100, 100, 40),
             verbose=False,
             cache=CACHE,
             memory_=memory_,
@@ -218,7 +236,6 @@ delay_to_regression_bins = {
 delay_to_score_bins = {}
 
 for num_days, reg_bin in delay_to_regression_bins.items():
-
     X, y = delay_to_Xy[num_days]
     if CV:
         n_samples = X.shape[0]
@@ -238,22 +255,6 @@ for num_days, reg_bin in delay_to_regression_bins.items():
     print('# ' + label.replace('$R^2_{oos}$ ', ''))
     _ = reg_bin.fit(X, y)
 
-for num_days, reg_bin in delay_to_regression_bins.items():
-    scores = delay_to_score_bins[num_days]
-    style = delay_to_style[num_days]
-    plot_model(
-        reg_bin,
-        style,
-        #         min_x=-0.5,
-        #         max_x=+0.5,
-        label=get_label(num_days, scores),
-    )
-
-fig = plt.gca().figure
-fig.legend()
-fig.set_figwidth(18)
-fig.set_figheight(6)
-plt.show()
 
 # extra_tree hist:no  cv_n_splits: 3
 # Ожидаемый доход, 7   д.  0.00056 ± 0.00065
@@ -279,3 +280,73 @@ plt.show()
 # Ожидаемый доход, 7   д. -0.00023 ± 0.00072
 # Ожидаемый доход, 30  д. -0.00057 ± 0.00132
 # Ожидаемый доход, 180 д. -0.00089 ± 0.00324
+
+# %%
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib import cm
+
+
+def plot_model(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
+    x = np.linspace(min_x0, max_x0, num=100)
+    y = np.linspace(min_x1, max_x1, num=100)
+    g = np.meshgrid(x, y)
+    X_pred = np.array(g).reshape(2, -1).T 
+    y_pred = reg_k.predict(X_pred)
+    
+    X, Y = g
+    assert X.shape == Y.shape
+    Z = y_pred.reshape(X.shape)    
+    fig, ax = plt.subplots()
+    
+    v_min_color = -0.1
+    v_max_color = 0.6
+    v_step_color = 0.1 / 2
+    v_num_color = 1 + int(round((v_max_color - v_min_color) / v_step_color))
+    
+    v_min_line = -0.1
+    v_max_line = 0.9
+    v_step_line = 0.1
+    v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
+    
+    color_norm = TwoSlopeNorm(0, v_min_color, v_max_color)
+    CS = ax.contourf(
+        X,
+        Y,
+        Z,
+        levels=np.linspace(
+            v_min_color,
+            v_max_color,
+            num=v_num_color,
+        ),
+        norm=color_norm,
+        cmap='RdBu',
+    )
+    ax.figure.set_figwidth(30)
+    ax.figure.set_figheight(15)
+    ax.set_title(title)
+    CS2 = ax.contour(
+        CS, 
+        levels=np.linspace(
+            v_min_line,
+            v_max_line,
+            num=v_num_line,
+        ),
+        colors='black',
+        linewidths=2,
+    )
+    ax.clabel(CS2, colors='black', fontsize=20)
+    plt.show()
+
+
+for num_days, reg_bin in delay_to_regression_bins.items():
+    scores = delay_to_score_bins[num_days]
+    style = delay_to_style[num_days]
+    plot_model(
+        reg_bin,
+        style,
+        min_x0=-0.25,
+        max_x0=+0.25,
+        min_x1=-0.04,
+        max_x1=+0.04,
+        title=get_label(num_days, scores),
+    )
