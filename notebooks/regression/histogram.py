@@ -53,9 +53,13 @@ class Histogram2dRegressionWrapper:
 
     # noinspection PyPep8Naming
     def fit(self, X, y, sample_weight=None):
-        assert X.shape[1] == 1
+        assert len(self.bins) == X.shape[1] + 1
+        assert len(y.shape) == 1
+
         if sample_weight is not None:
-            assert sample_weight.shape == (X.shape[0],)
+            assert sample_weight.shape == (
+                X.shape[0],
+            ), f'{sample_weight.shape=}, {X.shape=}'
 
         if self.transformer is not None:
             X = self.transformer.transform(X)
@@ -127,8 +131,10 @@ def create_histogram(
     )
     for feat_i, num_x in enumerate(nums_x):
         if num_x > 1:
-            X_delta = (X_max - X_min) / (num_x - 1)
-            i_z = ((df[f'X_{feat_i}'] - X_min) / X_delta + 0.5).astype('int')
+            X_delta = (X_max[feat_i] - X_min[feat_i]) / (num_x - 1)
+            i_z = ((df[f'X_{feat_i}'] - X_min[feat_i]) / X_delta + 0.5).astype(
+                'int'
+            )
         else:
             assert num_x == 1
             i_z = np.zeros((num_samples,), dtype='int')

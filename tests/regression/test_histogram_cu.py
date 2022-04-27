@@ -4,7 +4,7 @@ import itertools
 import typing
 
 import pytest
-import cupy
+import cupy as cp
 from cupy import testing
 
 from notebooks.regression_cu import histogram
@@ -117,17 +117,77 @@ def test_result(
     result: typing.Tuple[list[float], list[float], list[float]],
 ):
     X_h_1d, y_h, w_h = result
-    X_h = cupy.array(X_h_1d).reshape(-1, 1)
+    X_h = cp.array(X_h_1d).reshape(-1, 1)
 
-    X = cupy.array(X_1d).reshape(-1, 1)
+    X = cp.array(X_1d).reshape(-1, 1)
     actual_result = histogram.create_histogram(
         X,
-        cupy.array(y),
-        None if sample_weight is None else cupy.array(sample_weight),
+        cp.array(y),
+        None if sample_weight is None else cp.array(sample_weight),
         bins,
         same_x=same_x,
     )
     X_h_actual, y_h_actual, w_h_actual = actual_result
+    testing.assert_allclose(X_h_actual, X_h)
+    testing.assert_allclose(y_h_actual, y_h)
+    testing.assert_allclose(w_h_actual, w_h)
+
+
+@pytest.mark.parametrize(
+    ('X_2d', 'y_func', 'bins', 'X_h', 'y_h', 'w_h'),
+    [
+        (
+            # X represents all points of 2d coordinate grid
+            # from 0 to 1.5 with step 0.5
+            # [[0.0, 0.0],
+            #  [0.0, 0.5],
+            #  ...
+            #  [1.5, 1.5]]
+            # X_2d
+            cp.mgrid[
+                0:2:0.5, 0:2:0.5  # type: ignore[misc]
+            ].reshape(2, -1).T,
+            # y_func
+            (lambda X: X[:, 0]),
+            # bins
+            (2, 2, 2),
+            # X_h
+            cp.array([[0.25, 0.25], [0.25, 1.25], [1.25, 0.25], [1.25, 1.25]]),
+            # y_h
+            cp.array([0.25, 0.25, 1.25, 1.25]),
+            # w_h
+            cp.array([4.0, 4.0, 4.0, 4.0]),
+        ),
+        (
+            # X_2d
+            cp.mgrid[
+                0:2:0.5, 0:2:0.5  # type: ignore[misc]
+            ].reshape(2, -1).T,
+            # y_func
+            (lambda X: X[:, 1]),
+            # bins
+            (2, 2, 2),
+            # X_h
+            cp.array([[0.25, 0.25], [0.25, 1.25], [1.25, 0.25], [1.25, 1.25]]),
+            # y_h
+            cp.array([0.25, 1.25, 0.25, 1.25]),
+            # w_h
+            cp.array([4.0, 4.0, 4.0, 4.0]),
+        ),
+    ],
+)
+def test_2d_result(
+    X_2d: cp.ndarray,
+    y_func: typing.Callable[[cp.ndarray], cp.ndarray],
+    bins: typing.Tuple[int, int, int],
+    X_h: cp.ndarray,
+    y_h: cp.ndarray,
+    w_h: cp.ndarray,
+):
+    y = y_func(X_2d)
+    X_h_actual, y_h_actual, w_h_actual = histogram.create_histogram(
+        X_2d, y, None, bins=bins, same_x=True
+    )
     testing.assert_allclose(X_h_actual, X_h)
     testing.assert_allclose(y_h_actual, y_h)
     testing.assert_allclose(w_h_actual, w_h)

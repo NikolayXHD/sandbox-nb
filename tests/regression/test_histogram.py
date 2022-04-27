@@ -131,3 +131,63 @@ def test_result(
     testing.assert_allclose(X_h_actual, X_h)
     testing.assert_allclose(y_h_actual, y_h)
     testing.assert_allclose(w_h_actual, w_h)
+
+
+@pytest.mark.parametrize(
+    ('X_2d', 'y_func', 'bins', 'X_h', 'y_h', 'w_h'),
+    [
+        (
+            # X represents all points of 2d coordinate grid
+            # from 0 to 1.5 with step 0.5
+            # [[0.0, 0.0],
+            #  [0.0, 0.5],
+            #  ...
+            #  [1.5, 1.5]]
+            # X_2d
+            np.mgrid[
+                0:2:0.5, 0:2:0.5  # type: ignore[misc]
+            ].reshape(2, -1).T,
+            # y_func
+            (lambda X: X[:, 0]),
+            # bins
+            (2, 2, 2),
+            # X_h
+            np.array([[0.25, 0.25], [0.25, 1.25], [1.25, 0.25], [1.25, 1.25]]),
+            # y_h
+            np.array([0.25, 0.25, 1.25, 1.25]),
+            # w_h
+            np.array([4.0, 4.0, 4.0, 4.0]),
+        ),
+        (
+            # X_2d
+            np.mgrid[
+                0:2:0.5, 0:2:0.5  # type: ignore[misc]
+            ].reshape(2, -1).T,
+            # y_func
+            (lambda X: X[:, 1]),
+            # bins
+            (2, 2, 2),
+            # X_h
+            np.array([[0.25, 0.25], [0.25, 1.25], [1.25, 0.25], [1.25, 1.25]]),
+            # y_h
+            np.array([0.25, 1.25, 0.25, 1.25]),
+            # w_h
+            np.array([4.0, 4.0, 4.0, 4.0]),
+        ),
+    ],
+)
+def test_2d_result(
+    X_2d: np.ndarray,
+    y_func: typing.Callable[[np.ndarray], np.ndarray],
+    bins: typing.Tuple[int, int, int],
+    X_h: np.ndarray,
+    y_h: np.ndarray,
+    w_h: np.ndarray,
+):
+    y = y_func(X_2d)
+    X_h_actual, y_h_actual, w_h_actual = histogram.create_histogram(
+        X_2d, y, None, bins=bins, same_x=True
+    )
+    testing.assert_allclose(X_h_actual, X_h)
+    testing.assert_allclose(y_h_actual, y_h)
+    testing.assert_allclose(w_h_actual, w_h)
