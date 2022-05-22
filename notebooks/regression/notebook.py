@@ -235,7 +235,7 @@ from datetime import datetime
 
 def separate_features_2d(df_i):
     dt_from = datetime(2016, 1, 1, 0, 0).timestamp()
-    dt_to = datetime(2017, 1, 1, 0, 0).timestamp()
+    dt_to = datetime(2018, 1, 1, 0, 0).timestamp()
     df = df_i[df_i['t'].between(dt_from, dt_to)]
     return (
         df[['indicator_72d', 'indicator_1d']].values,
@@ -434,12 +434,12 @@ for delay in (7, 30, 180):
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 
-fig, axes = plt.subplots(1, len(delay_to_Xy), figsize=(24, 7))
+fig, axes = plt.subplots(1, len(delay_to_Xy_1d), figsize=(24, 7))
 fig.suptitle('Дискретизированные значения')
 
 bins = (50, 50)
 
-for i, (num_days, (X, y)) in enumerate(delay_to_Xy.items()):
+for i, (num_days, (X, y)) in enumerate(delay_to_Xy_1d.items()):
     # noinspection PyProtectedMember
     X_d, y_d, sample_weight = histogram.Histogram2dRegressionWrapper(
         None,
