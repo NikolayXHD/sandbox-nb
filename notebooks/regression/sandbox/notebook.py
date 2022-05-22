@@ -57,40 +57,26 @@ plt.plot(x, y_pred, '-')
 plt.show()
 
 # %%
-import pandas as pd
+from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
+from scipy.stats import norm 
 
-df = pd.DataFrame(
-    {
-        'i_0': [0, 0, 1, 1],
-        'i_1': [0, 1, 0, 1],
-        'X_0': [0.1, 0.1, 1.1, 1.1],
-        'X_1': [0.1, 1.1, 0.1, 1.1],
-    }
+x = np.linspace(-1, 1, num=21)
+X = x.reshape(-1, 1)
+y = np.sign(X)
+
+radius = 0.1
+
+regressor = KNeighborsWeightedRegressor(
+    n_neighbors=16,
+    weights=lambda d: norm.pdf(d / radius),
+    n_jobs=-1,
 )
-num_features = 2
-df
 
-# %%
-df_agg = df.groupby(['i_0', 'i_1']).agg(
-    {'X_0': 'mean', 'X_1': 'mean', 'i_0': 'first', 'i_1': 'first'}
-)
-df_agg
+regressor.fit(X, y)
 
-# %%
-(*df_agg.iloc[:, 2:].max(axis=0), 2)
+x_pred = np.linspace(-1, 1, num=81)
+X_pred = x_pred.reshape(-1, 1)
+y_pred = regressor.predict(X_pred)
 
-# %%
-index = np.zeros((*(df_agg.iloc[:, 2:].max(axis=0) + 1), 2))
-index
-
-# %%
-index[df_agg['i_0'], df_agg['i_1']]
-
-# %%
-index[tuple(df_agg.iloc[:, num_features:].T.values)] = df_agg.iloc[
-    :, :num_features
-].values
-index[tuple(df_agg.iloc[:, num_features:].T.values)]
-
-# %%
-df_agg.iloc[:, :num_features].values
+plt.plot(x_pred, y_pred)
+plt.show()
