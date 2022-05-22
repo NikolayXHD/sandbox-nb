@@ -24,3 +24,4 @@ dependencies:
   - pip:
       - brunette==0.2.0
   - python-language-server[all]=0.36.2
+  - theme-darcula=*
