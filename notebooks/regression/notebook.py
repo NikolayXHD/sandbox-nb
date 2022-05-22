@@ -77,22 +77,34 @@ delay_to_df = {delay: build_df(path) for delay, path in delay_to_dir.items()}
 delay_to_df[180]
 
 
-# %% jupyter={"outputs_hidden": true}
+# %% tags=[]
 def plot_2d_hist(df_k, n_days):
     x_field = 'indicator_72d'
     y_field = 'profit'
     h, x_edges, y_edges = np.histogram2d(
-        df_k[x_field], df_k[y_field], bins=(400, 400)
+        df_k[x_field], df_k[y_field], bins=(800, 800)
     )
-    x, y = np.meshgrid(x_edges, y_edges)
     
     fig, ax = plt.subplots()
-    ax.figure.set_figwidth(40)
-    ax.figure.set_figheight(40)
+    ax.figure.set_figwidth(14)
+    ax.figure.set_figheight(14)
     ax.set_title(f'доход через {n_days} дней, в пересчёте на 1 год')
-    ax.pcolormesh(x, y, h, cmap='bone')
-    ax.grid(True)
-    # ax.set_axisbelow(True)
+    
+    v_max_color = h.max()
+    v_min_color = h[h > 0].min()
+    v_num_color = 255
+
+    ax.contourf(
+        h,
+        extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
+        levels=np.linspace(
+            v_min_color,
+            v_max_color,
+            num=v_num_color,
+        ),
+        cmap='Blues',
+    )
+
     plt.show()
 
 plot_2d_hist(delay_to_df[180], 180)
@@ -218,12 +230,16 @@ fig.set_figwidth(18)
 fig.set_figheight(6)
 plt.show()
 
-
 # %%
+from datetime import datetime
+
 def separate_features_2d(df_i):
+    dt_from = datetime(2016, 1, 1, 0, 0).timestamp()
+    dt_to = datetime(2017, 1, 1, 0, 0).timestamp()
+    df = df_i[df_i['t'].between(dt_from, dt_to)]
     return (
-        df_i[['indicator_72d', 'indicator_1d']].values,
-        df_i['profit'].values,
+        df[['indicator_72d', 'indicator_1d']].values,
+        df['profit'].values,
     )
 
 # indicator_1h
@@ -238,15 +254,6 @@ delay_to_Xy_2d = {
 
 # %% pycharm={"name": "#%%\n"}
 # # %%timeit -n1 -r1
-
-# CV = False
-# CV_USES_HISTOGRAM = True
-# CACHE = False
-# 27.1 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
-
-# CACHE = True
-# 31.1 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
-# 2.76 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 
 from sklearn import ensemble
 from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
@@ -326,32 +333,6 @@ for num_days, reg_bin in delay_to_regression_bins_2d.items():
     print('# ' + label.replace('$R^2_{oos}$ ', ''))
     _ = reg_bin.fit(X, y)
 
-
-# extra_tree hist:no  cv_n_splits: 3
-# Ожидаемый доход, 7   д.  0.00056 ± 0.00065
-# Ожидаемый доход, 30  д.  0.00063 ± 0.00086
-# Ожидаемый доход, 180 д.  0.00303 ± 0.00288
-
-# extra_tree hist:yes  cv_n_splits: 3
-# Ожидаемый доход, 7   д.  0.00061 ± 0.00035
-# Ожидаемый доход, 30  д.  0.00038 ± 0.00069
-# Ожидаемый доход, 180 д.  0.00263 ± 0.00174
-
-# k_nearest  hist:yes  cv_n_splits: 3
-# Ожидаемый доход, 7   д. -0.00022 ± 0.00072
-# Ожидаемый доход, 30  д. -0.00056 ± 0.00133
-# Ожидаемый доход, 180 д. -0.00088 ± 0.00328
-
-# k_nearest  hist:no  cv_n_splits: 3
-# Ожидаемый доход, 7   д. -0.00023 ± 0.00072
-# Ожидаемый доход, 30  д. -0.00057 ± 0.00132
-# Ожидаемый доход, 180 д. -0.00089 ± 0.00324
-
-# k_nearest  hist:yes  cv_n_splits: 4
-# Ожидаемый доход, 7   д. -0.00023 ± 0.00072
-# Ожидаемый доход, 30  д. -0.00057 ± 0.00132
-# Ожидаемый доход, 180 д. -0.00089 ± 0.00324
-
 # %%
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib import cm
@@ -392,8 +373,8 @@ def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
         norm=color_norm,
         cmap='RdBu',
     )
-    ax.figure.set_figwidth(15)
-    ax.figure.set_figheight(15)
+    ax.figure.set_figwidth(14)
+    ax.figure.set_figheight(14)
     ax.set_title(title)
     CS2 = ax.contour(
         CS,
@@ -405,7 +386,7 @@ def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
         colors='black',
         linewidths=2,
     )
-    ax.clabel(CS2, colors='black', fontsize=20)
+    ax.clabel(CS2, colors='black', fontsize=16)
     plt.show()
 
 
