@@ -566,3 +566,8 @@ pre {
   font-size: var(--jp-code-font-size);
   line-height: var(--jp-code-line-height);
 }
+
+/* fix illegible yellow background in exception stacktrace */
+.ansi-yellow-bg {
+  background-color: #442200 !important;
+}
