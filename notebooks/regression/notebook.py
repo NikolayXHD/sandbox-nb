@@ -78,9 +78,9 @@ delay_to_df[180]
 
 
 # %% tags=[]
-def plot_2d_hist(df_k, n_days):
-    x_field = 'indicator_72d'
-    y_field = 'profit'
+def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
+    x_field = indicator_field
+    y_field = profit_field
     h, x_edges, y_edges = np.histogram2d(
         df_k[x_field], df_k[y_field], bins=(800, 800)
     )
@@ -107,27 +107,12 @@ def plot_2d_hist(df_k, n_days):
 
     plt.show()
 
-plot_2d_hist(delay_to_df[180], 180)
-
-
-# %%
-def separate_features_1d(df_i):
-    return (
-        df_i[['indicator_1d']].values,
-        df_i['profit'].values,
-    )
-
-# indicator_1h
-# indicator_1d
-# indicator
-# indicator_72d
-
-delay_to_Xy_1d = {
-    delay: separate_features_1d(df) for delay, df in delay_to_df.items()
-    # if delay == 180
-}
+plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit')
+plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit_in_currency')
 
 # %%
+import functools
+
 from sklearn import ensemble
 from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
@@ -135,6 +120,15 @@ from scipy.stats import norm
 CV = False
 CV_USES_HISTOGRAM = True
 CACHE = True
+
+
+@functools.lru_cache
+def separate_features_1d(delay, indicator_field, profit_field):
+    df_i = delay_to_df[delay]
+    return (
+        df_i[[indicator_field]].values,
+        df_i[profit_field].values,
+    )
 
 
 def create_estimator_bins_1d(delay):
@@ -172,6 +166,7 @@ def get_cv_1d():
             memory_=memory_,
         )
 
+
 def get_label(num_days, scores):
     return (
         f'Ожидаемый доход, {num_days:<3} д. '
@@ -179,85 +174,109 @@ def get_label(num_days, scores):
     )
 
 
-delay_to_regression_bins_1d = {
-    delay: create_estimator_bins_1d(delay) for delay in delay_to_Xy_1d.keys()
-}
-
-delay_to_score_bins_1d = {}
-
-for num_days, reg_bin in delay_to_regression_bins_1d.items():
-    X, y = delay_to_Xy_1d[num_days]
-    if CV:
-        n_samples = X.shape[0]
-        time_series_split = model_selection.TimeSeriesSplit(
-            n_splits=3, gap=n_samples // 40
-        )
-        scores = get_cv_1d().cross_validate(
-            reg_bin,
-            X,
-            y,
-            cv=time_series_split,
-        )
-    else:
-        scores = np.array([0])
-    delay_to_score_bins_1d[num_days] = scores
-    label = get_label(num_days, scores)
-    print('# ' + label.replace('$R^2_{oos}$ ', ''))
-    _ = reg_bin.fit(X, y)
-
-
-# %%
 def plot_model_1d(reg_k, *args, min_x=-1, max_x=+1, **kwargs):
     X_pred = np.linspace(min_x, max_x, num=1000)
     y_pred = reg_k.predict(X_pred.reshape(-1, 1))
     plt.plot(X_pred, y_pred, *args, **kwargs)
     plt.gca().grid(True)
 
-for num_days, reg_bin in delay_to_regression_bins_1d.items():
-    scores = delay_to_score_bins_1d[num_days]
-    style = delay_to_style[num_days]
-    plot_model_1d(
-        reg_bin,
-        style,
-        min_x=-0.6,
-        max_x=+0.6,
-        label=get_label(num_days, scores),
-    )
 
-fig = plt.gca().figure
-fig.legend()
-fig.set_figwidth(18)
-fig.set_figheight(6)
-plt.show()
 
-# %%
-from datetime import datetime
+def plot_regressions_1d(indicator_field, profit_field):
+    delay_to_Xy_1d = {
+        delay: separate_features_1d(delay, indicator_field, profit_field)
+        for delay, df in delay_to_df.items()
+        # if delay == 180
+    }
 
-def separate_features_2d(df_i):
-    dt_from = datetime(2016, 1, 1, 0, 0).timestamp()
-    dt_to = datetime(2018, 1, 1, 0, 0).timestamp()
-    df = df_i[df_i['t'].between(dt_from, dt_to)]
-    return (
-        df[['indicator_72d', 'indicator_1d']].values,
-        df['profit'].values,
-    )
+    delay_to_regression_bins_1d = {
+        delay: create_estimator_bins_1d(delay) for delay in delay_to_Xy_1d.keys()
+    }
+
+    delay_to_score_bins_1d = {}
+
+    for num_days, reg_bin in delay_to_regression_bins_1d.items():
+        X, y = delay_to_Xy_1d[num_days]
+        if CV:
+            n_samples = X.shape[0]
+            time_series_split = model_selection.TimeSeriesSplit(
+                n_splits=3, gap=n_samples // 40
+            )
+            scores = get_cv_1d().cross_validate(
+                reg_bin,
+                X,
+                y,
+                cv=time_series_split,
+            )
+        else:
+            scores = np.array([0])
+        delay_to_score_bins_1d[num_days] = scores
+        label = get_label(num_days, scores)
+        # print('# ' + label.replace('$R^2_{oos}$ ', ''))
+        _ = reg_bin.fit(X, y)
+
+    for num_days, reg_bin in delay_to_regression_bins_1d.items():
+        scores = delay_to_score_bins_1d[num_days]
+        style = delay_to_style[num_days]
+        plot_model_1d(
+            reg_bin,
+            style,
+            min_x=-0.6,
+            max_x=+0.6,
+            label=get_label(num_days, scores),
+        )
+
+    fig = plt.gca().figure
+    fig.legend()
+    fig.set_figwidth(18)
+    fig.set_figheight(6)
+    plt.show()
+
 
 # indicator_1h
 # indicator_1d
 # indicator
 # indicator_72d
+plot_regressions_1d('indicator_72d', 'profit')
+plot_regressions_1d('indicator_72d', 'profit_in_currency')
 
-delay_to_Xy_2d = {
-    delay: separate_features_2d(df) for delay, df in delay_to_df.items()
-    # if delay == 180
-}
+
+# %%
+@functools.lru_cache
+def separate_features_2d(
+    delay,
+    dt_from,
+    dt_to,
+    indicator_1_field,
+    indicator_2_field,
+    profit_field,
+):
+    df_i = delay_to_df[delay]
+    if dt_from is not None and dt_to is not None:
+        df = df_i[df_i['t'].between(dt_from.timestamp(), dt_to.timestamp())]
+    elif dt_from is not None:
+        df = df_i[df_i['t'] >= dt_from.timestamp()]
+    elif dt_to is not None:
+        df = df_i[df_i['t'] <= dt_to.timestamp()]
+    else:
+        df = df_i
+    return (
+        df[[indicator_1_field, indicator_2_field]].values,
+        df[profit_field].values,
+    )
+
 
 # %% pycharm={"name": "#%%\n"}
 # # %%timeit -n1 -r1
 
+from datetime import datetime
+import functools
+
 from sklearn import ensemble
 from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib import cm
 
 CV = False
 CV_USES_HISTOGRAM = True
@@ -307,38 +326,7 @@ def get_label(num_days, scores):
     )
 
 
-delay_to_regression_bins_2d = {
-    delay: create_estimator_bins_2d(delay) for delay in delay_to_Xy_2d.keys()
-}
-
-delay_to_score_bins_2d = {}
-
-for num_days, reg_bin in delay_to_regression_bins_2d.items():
-    X, y = delay_to_Xy_2d[num_days]
-    if CV:
-        n_samples = X.shape[0]
-        time_series_split = model_selection.TimeSeriesSplit(
-            n_splits=3, gap=n_samples // 40
-        )
-        scores = get_cv_2d().cross_validate(
-            reg_bin,
-            X,
-            y,
-            cv=time_series_split,
-        )
-    else:
-        scores = np.array([0])
-    delay_to_score_bins_2d[num_days] = scores
-    label = get_label(num_days, scores)
-    print('# ' + label.replace('$R^2_{oos}$ ', ''))
-    _ = reg_bin.fit(X, y)
-
-# %%
-from matplotlib.colors import TwoSlopeNorm
-from matplotlib import cm
-
-
-def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
+def plot_model_2d(ax, reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
     x = np.linspace(min_x0, max_x0, num=100)
     y = np.linspace(min_x1, max_x1, num=100)
     g = np.meshgrid(x, y)
@@ -348,15 +336,14 @@ def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
     X, Y = g
     assert X.shape == Y.shape
     Z = y_pred.reshape(X.shape)    
-    fig, ax = plt.subplots()
     
-    v_min_color = -0.2
-    v_max_color = 0.5
+    v_min_color = -0.5
+    v_max_color = 1.0
     v_step_color = 0.01
     v_num_color = 1 + int(round((v_max_color - v_min_color) / v_step_color))
     
-    v_min_line = -0.2
-    v_max_line = 0.5
+    v_min_line = -0.5
+    v_max_line = 1.0
     v_step_line = 0.05
     v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
     
@@ -373,8 +360,6 @@ def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
         norm=color_norm,
         cmap='RdBu',
     )
-    ax.figure.set_figwidth(14)
-    ax.figure.set_figheight(14)
     ax.set_title(title)
     CS2 = ax.contour(
         CS,
@@ -387,21 +372,118 @@ def plot_model_2d(reg_k, *args, min_x0=-1, max_x0=+1, min_x1, max_x1, title):
         linewidths=2,
     )
     ax.clabel(CS2, colors='black', fontsize=16)
+
+
+def plot_regressions_2d(
+    dt_from,
+    dt_to,
+    indicator_1_field,
+    indicator_2_field,
+    profit_field,
+):
+    delay_to_Xy_2d = {
+        delay: separate_features_2d(
+            delay=delay,
+            dt_from=dt_from,
+            dt_to=dt_to,
+            indicator_1_field=indicator_1_field,
+            indicator_2_field=indicator_2_field,
+            profit_field=profit_field,
+        )
+        for delay, df in delay_to_df.items()
+        # if delay == 180
+    }
+    delay_to_regression_bins_2d = {
+        delay: create_estimator_bins_2d(delay) for delay in delay_to_Xy_2d.keys()
+    }
+    delay_to_score_bins_2d = {}
+
+    for num_days, reg_bin in delay_to_regression_bins_2d.items():
+        X, y = delay_to_Xy_2d[num_days]
+        if CV:
+            n_samples = X.shape[0]
+            time_series_split = model_selection.TimeSeriesSplit(
+                n_splits=3, gap=n_samples // 40
+            )
+            scores = get_cv_2d().cross_validate(
+                reg_bin,
+                X,
+                y,
+                cv=time_series_split,
+            )
+        else:
+            scores = np.array([0])
+        delay_to_score_bins_2d[num_days] = scores
+        label = get_label(num_days, scores)
+        # print('# ' + label.replace('$R^2_{oos}$ ', ''))
+        _ = reg_bin.fit(X, y)
+    
+    num_subplots = len(delay_to_regression_bins_2d)
+    fig, ax = plt.subplots(1, num_subplots, figsize=((9 + 1) * num_subplots, 9))
+    # fig.tight_layout()
+    
+    dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
+    dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
+    fig.suptitle(
+        f'{dt_from_str} -- {dt_to_str}   {indicator_1_field} x {indicator_2_field} -> {profit_field}',
+        fontsize=16,
+    )
+    for i, (num_days, reg_bin) in enumerate(delay_to_regression_bins_2d.items()):
+        scores = delay_to_score_bins_2d[num_days]
+        style = delay_to_style[num_days]
+        plot_model_2d(
+            ax[i],
+            reg_bin,
+            style,
+            min_x0=-0.2,
+            max_x0=+0.2,
+            min_x1=-0.6,
+            max_x1=+0.6,
+            title=get_label(num_days, scores),
+        )
     plt.show()
 
+# indicator_1h
+# indicator_1d
 
-for num_days, reg_bin in delay_to_regression_bins_2d.items():
-    scores = delay_to_score_bins_2d[num_days]
-    style = delay_to_style[num_days]
-    plot_model_2d(
-        reg_bin,
-        style,
-        min_x0=-0.2,
-        max_x0=+0.2,
-        min_x1=-0.6,
-        max_x1=+0.6,
-        title=get_label(num_days, scores),
-    )
+# 24d
+# indicator
+
+# indicator_72d
+# profit
+# profit_in_currency
+
+plot_regressions_2d(
+    dt_from=datetime(2015, 6, 1, 0, 0),
+    dt_to=datetime(2017, 6, 1, 0, 0),
+    indicator_1_field='indicator_72d',
+    indicator_2_field='indicator_1d',
+    profit_field='profit_in_currency',
+)
+
+plot_regressions_2d(
+    dt_from=datetime(2017, 6, 1, 0, 0),
+    dt_to=datetime(2019, 6, 1, 0, 0),
+    indicator_1_field='indicator_72d',
+    indicator_2_field='indicator_1d',
+    profit_field='profit_in_currency',
+)
+
+plot_regressions_2d(
+    dt_from=datetime(2019, 6, 1, 0, 0),
+    dt_to=datetime(2021, 6, 1, 0, 0),
+    indicator_1_field='indicator_72d',
+    indicator_2_field='indicator_1d',
+    profit_field='profit_in_currency',
+)
+
+plot_regressions_2d(
+    dt_from=None,
+    dt_to=None,
+    indicator_1_field='indicator_72d',
+    indicator_2_field='indicator_1d',
+    profit_field='profit_in_currency',
+)
 
 # %%
 
