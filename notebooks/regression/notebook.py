@@ -32,9 +32,12 @@ from notebooks.regression import histogram
 
 
 def build_df(directory: Path):
-    df = pd.concat(
-        pd.read_feather(file) for file in directory.glob('*.feather')
-    )
+    parts: list[pd.DataFrame] = []
+    for file in directory.glob('*.feather'):
+        print(f'\r{file.resolve()}', end='')
+        parts.append(pd.read_feather(file))
+    print()
+    df = pd.concat(parts)
     df.sort_values(by=['t'], inplace=True)
     return df
 
@@ -107,8 +110,8 @@ def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
 
     plt.show()
 
-plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit')
-plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit_in_currency')
+plot_2d_hist(delay_to_df[180], 180, 'indicator_12h', 'profit')
+# plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit_in_currency')
 
 # %%
 import functools
@@ -170,7 +173,7 @@ def get_cv_1d():
 def get_label(num_days, scores):
     return (
         f'Ожидаемый доход, {num_days:<3} д. '
-        f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
+        # f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
     )
 
 
@@ -221,10 +224,11 @@ def plot_regressions_1d(indicator_field, profit_field):
         plot_model_1d(
             reg_bin,
             style,
-            min_x=-0.6,
-            max_x=+0.6,
-            label=get_label(num_days, scores),
+            min_x=-1,
+            max_x=+1,
+            label=(get_label(num_days, scores)),
         )
+        plt.gca().set_title(f'{indicator_field} -> {profit_field}')
 
     fig = plt.gca().figure
     fig.legend()
@@ -237,11 +241,18 @@ def plot_regressions_1d(indicator_field, profit_field):
 # indicator_1d
 # indicator
 # indicator_72d
+# plot_regressions_1d('indicator_72d', 'profit')
+# plot_regressions_1d('indicator_72d', 'profit_in_currency')
+plot_regressions_1d('indicator_4h', 'profit')
+plot_regressions_1d('indicator_12h', 'profit')
+plot_regressions_1d('indicator_1d', 'profit')
+plot_regressions_1d('indicator', 'profit')  # 24d
 plot_regressions_1d('indicator_72d', 'profit')
-plot_regressions_1d('indicator_72d', 'profit_in_currency')
-
 
 # %%
+import functools
+
+
 @functools.lru_cache
 def separate_features_2d(
     delay,
@@ -322,7 +333,7 @@ def get_cv_2d():
 def get_label(num_days, scores):
     return (
         f'Ожидаемый доход, {num_days:<3} д. '
-        f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
+        # f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
     )
 
 
@@ -437,8 +448,8 @@ def plot_regressions_2d(
             style,
             min_x0=-0.2,
             max_x0=+0.2,
-            min_x1=-0.6,
-            max_x1=+0.6,
+            min_x1=-1,
+            max_x1=+1,
             title=get_label(num_days, scores),
         )
     plt.show()
@@ -457,38 +468,38 @@ plot_regressions_2d(
     dt_from=datetime(2015, 6, 1, 0, 0),
     dt_to=datetime(2017, 6, 1, 0, 0),
     indicator_1_field='indicator_72d',
-    indicator_2_field='indicator_1d',
-    profit_field='profit_in_currency',
+    indicator_2_field='indicator_4h',
+    profit_field='profit',
 )
 
 plot_regressions_2d(
     dt_from=datetime(2017, 6, 1, 0, 0),
     dt_to=datetime(2019, 6, 1, 0, 0),
     indicator_1_field='indicator_72d',
-    indicator_2_field='indicator_1d',
-    profit_field='profit_in_currency',
+    indicator_2_field='indicator_4h',
+    profit_field='profit',
 )
 
 plot_regressions_2d(
     dt_from=datetime(2019, 6, 1, 0, 0),
     dt_to=datetime(2021, 6, 1, 0, 0),
     indicator_1_field='indicator_72d',
-    indicator_2_field='indicator_1d',
-    profit_field='profit_in_currency',
+    indicator_2_field='indicator_4h',
+    profit_field='profit',
 )
 
 plot_regressions_2d(
     dt_from=None,
     dt_to=None,
     indicator_1_field='indicator_72d',
-    indicator_2_field='indicator_1d',
-    profit_field='profit_in_currency',
+    indicator_2_field='indicator_4h',
+    profit_field='profit',
 )
 
 # %%
 
-min_v_01d = 0.20
-min_v_72d = 0.10
+min_v_01d = 0.25
+min_v_72d = 0.05
 
 month = 6
 
@@ -503,8 +514,8 @@ for delay in (7, 30, 180):
         )
         df = df_all[time_mask]
 
-        hot_mask = (df['indicator_1d'] < -min_v_01d) & (df['indicator_72d'] > min_v_72d)
-        col_mask = (df['indicator_1d'] > +min_v_01d) & (df['indicator_72d'] > min_v_72d)
+        hot_mask = (df['indicator_4h'] < -min_v_01d) & (df['indicator_72d'] > min_v_72d)
+        col_mask = (df['indicator_4h'] > +min_v_01d) & (df['indicator_72d'] > min_v_72d)
 
         print(f'    hot:  {df[hot_mask]["profit"].mean():.2f}, freq: {hot_mask.sum() / len(df):.3f}')
         print(f'    cold: {df[col_mask]["profit"].mean():.2f}, freq: {col_mask.sum() / len(df):.3f}')
