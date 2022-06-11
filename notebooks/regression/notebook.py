@@ -116,6 +116,40 @@ plot_2d_hist(delay_to_df[180], 180, 'indicator_12h', 'profit')
 # %%
 import functools
 
+
+@functools.lru_cache
+def separate_features_1d(
+    *,
+    delay,
+    dt_from,
+    dt_to,
+    indicator_field,
+    profit_field
+):
+    df_i = delay_to_df[delay]
+    if dt_from is not None and dt_to is not None:
+        df = df_i[df_i['t'].between(dt_from.timestamp(), dt_to.timestamp())]
+    elif dt_from is not None:
+        df = df_i[df_i['t'] >= dt_from.timestamp()]
+    elif dt_to is not None:
+        df = df_i[df_i['t'] <= dt_to.timestamp()]
+    else:
+        df = df_i
+    return (
+        df[[indicator_field]].values,
+        df[profit_field].values,
+    )
+
+
+# %%
+ind_180 = delay_to_df[180]['indicator']
+print(f'{ind_180.quantile(0.0001)=} {ind_180.quantile(0.01)=} {ind_180.quantile(0.99)=} {ind_180.quantile(0.9999)=}')
+ind_4h_180 = delay_to_df[180]['indicator_4h']
+print(f'{ind_4h_180.quantile(0.001)=} {ind_4h_180.quantile(0.01)=} {ind_4h_180.quantile(0.99)=} {ind_4h_180.quantile(0.999)=}')
+
+# %%
+from datetime import datetime
+
 from sklearn import ensemble
 from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
@@ -123,15 +157,6 @@ from scipy.stats import norm
 CV = False
 CV_USES_HISTOGRAM = True
 CACHE = True
-
-
-@functools.lru_cache
-def separate_features_1d(delay, indicator_field, profit_field):
-    df_i = delay_to_df[delay]
-    return (
-        df_i[[indicator_field]].values,
-        df_i[profit_field].values,
-    )
 
 
 def create_estimator_bins_1d(delay):
@@ -172,24 +197,40 @@ def get_cv_1d():
 
 def get_label(num_days, scores):
     return (
-        f'Ожидаемый доход, {num_days:<3} д. '
+        f'{num_days:<3} дней'
         # f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
     )
 
 
-def plot_model_1d(reg_k, *args, min_x=-1, max_x=+1, **kwargs):
-    X_pred = np.linspace(min_x, max_x, num=1000)
+def plot_model_1d(reg_k, ax, *args, min_x=-1, max_x=+1, relative=False, **kwargs):
+    num_points = 1000
+    X_pred = np.linspace(min_x, max_x, num=num_points)
     y_pred = reg_k.predict(X_pred.reshape(-1, 1))
-    plt.plot(X_pred, y_pred, *args, **kwargs)
-    plt.gca().grid(True)
+    if relative:
+        y_pred -= y_pred[num_points // 2]
+    ax.plot(X_pred, y_pred - y_pred[500], *args, **kwargs)
+    ax.grid(True)
 
 
-
-def plot_regressions_1d(indicator_field, profit_field):
+def plot_regressions_1d(
+    *,
+    dt_from,
+    dt_to,
+    indicator_field,
+    profit_field,
+    axes,
+    num_color=None,
+    **kwargs,
+):
     delay_to_Xy_1d = {
-        delay: separate_features_1d(delay, indicator_field, profit_field)
+        delay: separate_features_1d(
+            delay=delay,
+            dt_from=dt_from,
+            dt_to=dt_to,
+            indicator_field=indicator_field,
+            profit_field=profit_field,
+        )
         for delay, df in delay_to_df.items()
-        # if delay == 180
     }
 
     delay_to_regression_bins_1d = {
@@ -218,36 +259,99 @@ def plot_regressions_1d(indicator_field, profit_field):
         # print('# ' + label.replace('$R^2_{oos}$ ', ''))
         _ = reg_bin.fit(X, y)
 
-    for num_days, reg_bin in delay_to_regression_bins_1d.items():
+    dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
+    dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
+        
+    for (num_days, reg_bin), ax in zip(
+        delay_to_regression_bins_1d.items(), axes
+    ):
         scores = delay_to_score_bins_1d[num_days]
         style = delay_to_style[num_days]
+        if num_color is not None:
+            style += f'C{num_color}'
         plot_model_1d(
             reg_bin,
+            ax,
             style,
-            min_x=-1,
-            max_x=+1,
-            label=(get_label(num_days, scores)),
+            label=f'{dt_from_str} -- {dt_to_str}',
+            **kwargs,
         )
-        plt.gca().set_title(f'{indicator_field} -> {profit_field}')
+        ax.set_title(
+            f'{indicator_field} -> {profit_field}  {get_label(num_days, scores)}'
+        )
+        # ax.legend()
+    # plt.show()
 
-    fig = plt.gca().figure
-    fig.legend()
-    fig.set_figwidth(18)
-    fig.set_figheight(6)
+
+date_ranges = (
+    (datetime(2015, 6, 1, 0, 0), datetime(2016, 6, 1, 0, 0)),
+    (datetime(2016, 6, 1, 0, 0), datetime(2017, 6, 1, 0, 0)),
+    (datetime(2017, 6, 1, 0, 0), datetime(2018, 6, 1, 0, 0)),
+    (datetime(2018, 6, 1, 0, 0), datetime(2019, 6, 1, 0, 0)),
+    (datetime(2019, 6, 1, 0, 0), datetime(2020, 6, 1, 0, 0)),
+    (datetime(2020, 6, 1, 0, 0), datetime(2021, 6, 1, 0, 0)),
+)
+
+def plot_facet(*, indicator_field, profit_field, **kwargs):
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=3,
+        sharex=True,
+        sharey=True,
+        squeeze=True,
+        figsize=(24, 8),
+    )
+
+    for n, (dt_from, dt_to) in enumerate(date_ranges):
+        plot_regressions_1d(
+            dt_from=dt_from,
+            dt_to=dt_to,
+            indicator_field=indicator_field,
+            profit_field=profit_field,
+            num_color=n,
+            axes=axes,
+            **kwargs,
+        )
+
+    plot_regressions_1d(
+        dt_from=None,
+        dt_to=None,
+        indicator_field=indicator_field,
+        profit_field=profit_field,
+        axes=axes,
+        linewidth=3,
+        color='white',
+        **kwargs,
+    )
+
     plt.show()
-
 
 # indicator_1h
 # indicator_1d
 # indicator
 # indicator_72d
+# profit
+# profit_in_currency
+
+plot_facet(
+    indicator_field='indicator_4h',
+    profit_field='profit_in_currency',
+    relative=True,
+)
+
+plot_facet(
+    indicator_field='indicator',
+    profit_field='profit_in_currency',
+    min_x = -0.35,
+    max_x = +0.35,
+    relative=True,
+)
+
+# plot_regressions_1d('indicator_4h', 'profit')
+# plot_regressions_1d('indicator_12h', 'profit')
+# plot_regressions_1d('indicator_1d', 'profit')
+# plot_regressions_1d('indicator', 'profit')  # 24d
 # plot_regressions_1d('indicator_72d', 'profit')
-# plot_regressions_1d('indicator_72d', 'profit_in_currency')
-plot_regressions_1d('indicator_4h', 'profit')
-plot_regressions_1d('indicator_12h', 'profit')
-plot_regressions_1d('indicator_1d', 'profit')
-plot_regressions_1d('indicator', 'profit')  # 24d
-plot_regressions_1d('indicator_72d', 'profit')
 
 # %%
 import functools
