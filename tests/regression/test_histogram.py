@@ -144,9 +144,7 @@ def test_result(
             #  ...
             #  [1.5, 1.5]]
             # X_2d
-            np.mgrid[
-                0:2:0.5, 0:2:0.5  # type: ignore[misc]
-            ].reshape(2, -1).T,
+            np.mgrid[0:2:0.5, 0:2:0.5].reshape(2, -1).T,  # type: ignore[misc]
             # y_func
             (lambda X: X[:, 0]),
             # bins
@@ -160,9 +158,7 @@ def test_result(
         ),
         (
             # X_2d
-            np.mgrid[
-                0:2:0.5, 0:2:0.5  # type: ignore[misc]
-            ].reshape(2, -1).T,
+            np.mgrid[0:2:0.5, 0:2:0.5].reshape(2, -1).T,  # type: ignore[misc]
             # y_func
             (lambda X: X[:, 1]),
             # bins

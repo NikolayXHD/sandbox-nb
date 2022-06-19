@@ -58,7 +58,7 @@ plt.show()
 
 # %%
 from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
-from scipy.stats import norm 
+from scipy.stats import norm
 
 x = np.linspace(-1, 1, num=21)
 X = x.reshape(-1, 1)
