@@ -1,7 +1,7 @@
 import inspect
 import os
 
-import joblib.func_inspect
+import importlib
 
 
 def get_func_name(func, resolv_alias=True, win_characters=True):
@@ -33,7 +33,7 @@ def get_func_name(func, resolv_alias=True, win_characters=True):
     if module == '__main__':
         try:
             filename = os.path.abspath(inspect.getsourcefile(func))
-        except:
+        except Exception:
             filename = None
         if filename is not None:
             # mangling of full path to filename
@@ -60,6 +60,7 @@ def get_func_name(func, resolv_alias=True, win_characters=True):
                 # If we split it off, the function again has the same
                 # identifier across runs.
                 parts[-2] = 'ipykernel'
+                del parts[-1]
             filename = '-'.join(parts)
             if filename.endswith('.py'):
                 filename = filename[:-3]
@@ -89,6 +90,20 @@ def get_func_name(func, resolv_alias=True, win_characters=True):
     return module, name
 
 
-joblib.func_inspect.get_func_name = get_func_name
+try:
+    import joblib.func_inspect
+except ImportError:
+    pass
+else:
+    from joblib.func_inspect import _clean_win_chars
+    joblib.func_inspect.get_func_name = get_func_name
+
+    import joblib
+
+    importlib.reload(joblib)
+
+    import joblib.memory
+
+    importlib.reload(joblib.memory)
 
 __all__ = []
