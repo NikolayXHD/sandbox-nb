@@ -70,11 +70,15 @@ memory_ = Memory(
 
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
-        'regression-multiple-indicator',
+        'regression',
         'moex',
         'dohodru',
         'rub',
         '2015-07-01--2021-07-01',
+        '4h_1d_3d_9d_24d_72d',
+        'market_True',
+        'profit_currency_USD',
+        'collect_ad_False',
         f'{delay}d',
     )
     for delay in (7, 30, 180)
@@ -91,12 +95,10 @@ def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
     x_field = indicator_field
     y_field = profit_field
     h, x_edges, y_edges = np.histogram2d(
-        df_k[x_field], df_k[y_field], bins=(800, 800)
+        df_k[x_field], df_k[y_field], bins=(200, 200)
     )
 
-    fig, ax = plt.subplots()
-    ax.figure.set_figwidth(14)
-    ax.figure.set_figheight(14)
+    fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_title(f'доход через {n_days} дней, в пересчёте на 1 год')
 
     v_max_color = h.max()
@@ -117,7 +119,8 @@ def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
     plt.show()
 
 
-plot_2d_hist(delay_to_df[180], 180, 'indicator_12h', 'profit')
+# plot_2d_hist(delay_to_df[180], 180, 'indicator_24d', 'profit_in_currency')
+plot_2d_hist(delay_to_df[180], 180, 'indicator_market', 'profit_in_currency')
 # plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit_in_currency')
 
 # %%
@@ -208,16 +211,24 @@ def build_df_indicator_quantiles(indicator_names: list[str]) -> pd.DataFrame:
 df_indicator_quantiles = build_df_indicator_quantiles(
     [
         'indicator_4h',
-        'indicator_12h',
+        # 'ad_exp_4h',
         'indicator_1d',
-        'indicator_5d',
-        'indicator',
+        'indicator_3d',
+        'indicator_9d',
+        # 'ad_exp_5d',
+        'indicator_24d',
+        # 'ad_exp_24d',
         'indicator_72d',
-        'market_indicator',
+        'indicator_market',
     ]
 )
 
 df_indicator_quantiles
+
+# %%
+fig, ax = plt.subplots(figsize=(20, 10))
+sns.lineplot(data=df_indicator_quantiles, ax=ax)
+plt.show()
 
 # %%
 from datetime import datetime
@@ -293,7 +304,6 @@ def plot_model_1d(
         y_relative = reg_k.predict(np.array([[relative]]))
         y_pred -= y_relative[0]
     ax.plot(X_pred, y_pred, *args, **kwargs)
-    ax.grid(True)
 
 
 def plot_regressions_1d(
@@ -305,7 +315,8 @@ def plot_regressions_1d(
     axes,
     num_color=None,
     relative: float | None = None,
-    y_ticks_interval: float | None = None,
+    y_ticks_interval_minor: float | None = 0.05,
+    y_ticks_interval_major: float | None = 0.2,
     **kwargs,
 ):
     delay_to_Xy_1d = {
@@ -364,6 +375,7 @@ def plot_regressions_1d(
             relative=relative,
             **kwargs,
         )
+        ax.grid(True, which='both')        
         title = (
             f'{indicator_field} -> {profit_field}  '
             f'{get_label_1d(num_days, scores)}'
@@ -371,11 +383,18 @@ def plot_regressions_1d(
         if relative is not None:
             title += f', relative to {relative}'
         ax.set_title(title)
-        if y_ticks_interval is not None:
-            assert isinstance(y_ticks_interval, typing.SupportsFloat)
-            ax.yaxis.set_major_locator(
-                ticker.MultipleLocator(y_ticks_interval)
+
+        if y_ticks_interval_minor is not None:
+            assert isinstance(y_ticks_interval_minor, typing.SupportsFloat)
+            ax.yaxis.set_minor_locator(
+                ticker.MultipleLocator(y_ticks_interval_minor)
             )
+        if y_ticks_interval_major is not None:
+            assert isinstance(y_ticks_interval_major, typing.SupportsFloat)
+            ax.yaxis.set_major_locator(
+                ticker.MultipleLocator(y_ticks_interval_major)
+            )
+        
         # ax.legend()
     # plt.show()
 
@@ -393,7 +412,10 @@ DATE_RANGES = (
 def plot_facet(
     *,
     indicator_field,
-    profit_fields=('profit_in_currency', 'profit'),
+    profit_fields=(
+        'profit_in_currency', 
+        # 'profit'
+    ),
     figsize=(28, 8),
     **kwargs,
 ) -> None:
@@ -407,6 +429,9 @@ def plot_facet(
     )
 
     for i_profit_field, profit_field in enumerate(profit_fields):
+        current_axes = (
+            axes[i_profit_field] if len(profit_fields) > 1 else axes
+        )
         for i_date_range, (dt_from, dt_to) in enumerate(DATE_RANGES):
             plot_regressions_1d(
                 dt_from=dt_from,
@@ -414,7 +439,7 @@ def plot_facet(
                 indicator_field=indicator_field,
                 profit_field=profit_field,
                 num_color=i_date_range,
-                axes=axes[i_profit_field],
+                axes=current_axes,
                 **kwargs,
             )
 
@@ -423,7 +448,7 @@ def plot_facet(
             dt_to=None,
             indicator_field=indicator_field,
             profit_field=profit_field,
-            axes=axes[i_profit_field],
+            axes=current_axes,
             linewidth=3,
             color='white',
             **kwargs,
@@ -443,61 +468,47 @@ def plot_facet(
 plot_facet(
     indicator_field='indicator_4h',
     relative=0,
-    y_ticks_interval=0.1,
-)
-
-# %%
-plot_facet(
-    indicator_field='indicator_12h',
-    y_ticks_interval=0.1,
-    relative=0,
 )
 
 # %%
 plot_facet(
     indicator_field='indicator_1d',
-    y_ticks_interval=0.1,
     relative=0,
 )
 
 # %%
 plot_facet(
-    indicator_field='indicator_5d',
-    min_x=-0.9,
-    max_x=+0.9,
-    y_ticks_interval=0.1,
-    # relative=0,
-    figsize=(28, 16),
+    indicator_field='indicator_3d',
+    relative=0,
+    figsize=(28, 10),
 )
 
 # %%
 plot_facet(
-    indicator_field='indicator',
-    min_x=-0.9,
-    max_x=+0.9,
-    y_ticks_interval=0.1,
-    # relative=0,
-    figsize=(28, 16),
+    indicator_field='indicator_9d',
+    relative=0,
+    figsize=(28, 10),
+)
+
+# %%
+plot_facet(
+    indicator_field='indicator_24d',
+    relative=0,
+    figsize=(28, 10),
 )
 
 # %%
 plot_facet(
     indicator_field='indicator_72d',
-    min_x=-0.75,
-    max_x=+0.75,
-    y_ticks_interval=0.1,
     relative=0,
-    figsize=(28, 16),
+    figsize=(28, 10),
 )
 
 # %%
 plot_facet(
-    indicator_field='market_indicator',
-    min_x=-0.15,
-    max_x=+0.10,
-    y_ticks_interval=0.1,
+    indicator_field='indicator_market',
     relative=0,
-    figsize=(28, 16),
+    figsize=(28, 10),
 )
 
 
@@ -631,13 +642,13 @@ def plot_model_2d(
     assert X.shape == Y.shape
     Z = y_pred.reshape(X.shape)
 
-    v_min_color = -2.0
-    v_max_color = 2.0
+    v_min_color = -1.5
+    v_max_color = 1.5
     v_step_color = 0.05
     v_num_color = 1 + int(round((v_max_color - v_min_color) / v_step_color))
 
-    v_min_line = -2.0
-    v_max_line = 2.0
+    v_min_line = -1.5
+    v_max_line = 1.5
     v_step_line = 0.20
     v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
 
@@ -735,8 +746,8 @@ def plot_regressions_2d(
             ax[i],
             reg_bin,
             style,
-            min_x0=-0.85,
-            max_x0=+0.85,
+            min_x0=-1,
+            max_x0=+1,
             min_x1=-1,
             max_x1=+1,
             title=get_label_2d(num_days, scores),
@@ -758,7 +769,7 @@ for date_from, date_to in DATE_RANGES:
     plot_regressions_2d(
         dt_from=date_from,
         dt_to=date_to,
-        indicator_1_field='indicator',
+        indicator_1_field='indicator_72d',
         indicator_2_field='indicator_4h',
         profit_field='profit_in_currency',
     )
@@ -766,7 +777,7 @@ for date_from, date_to in DATE_RANGES:
 plot_regressions_2d(
     dt_from=None,
     dt_to=None,
-    indicator_1_field='indicator',
+    indicator_1_field='indicator_72d',
     indicator_2_field='indicator_4h',
     profit_field='profit_in_currency',
 )
