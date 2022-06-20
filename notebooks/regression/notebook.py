@@ -35,13 +35,19 @@ def build_df(directory: Path):
     parts: list[pd.DataFrame] = []
     last_msg: str | None = None
     files = sorted(directory.glob('*.feather'))
+    tickers = [f.stem for f in files]
+    
     print(directory.resolve())
-    for i, file in enumerate(files):
+    for i, f in enumerate(files):
         if last_msg is not None:
             print('\r' + ' ' * len(last_msg) + '\r', end='')
-        last_msg = f'{file.name} {i + 1} / {len(files)}'
+        last_msg = f'{f.name} {i + 1} / {len(files)}'
         print(last_msg, end='')
-        parts.append(pd.read_feather(file))
+        df_specific_ticker = pd.read_feather(f)
+        df_specific_ticker['ticker'] = pd.Categorical(
+            [f.stem] * len(df_specific_ticker), categories=tickers
+        )
+        parts.append(df_specific_ticker)
     print()
     df = pd.concat(parts)
     df.sort_values(by=['t'], inplace=True)
@@ -781,6 +787,21 @@ plot_regressions_2d(
     indicator_2_field='indicator_4h',
     profit_field='profit_in_currency',
 )
+
+
+# %%
+def plot_ticker_distribution(dt_from, dt_to):
+    fig, ax = plt.subplots(figsize=(20, 10))
+    df = delay_to_df[180]
+    df = df[df['t'].between(dt_from.timestamp(), dt_to.timestamp())]
+    val_counts = df['ticker'].value_counts()
+    plt.bar(val_counts.index, val_counts.values)
+    plt.xticks(rotation = 90)
+    ax.set_title(f'{dt_from.date()} -- {dt_to.date()}')
+    plt.show()
+
+for dt_from, dt_to in DATE_RANGES:
+    plot_ticker_distribution(dt_from, dt_to)
 
 # %%
 min_v_01d = 0.25
