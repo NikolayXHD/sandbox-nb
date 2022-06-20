@@ -149,6 +149,9 @@ def separate_features_1d(
             dt_to=dt_to,
             profit_field=profit_field,
         ),
+        _separate_w_1d(
+            delay=delay, dt_from=dt_from, dt_to=dt_to
+        ),
     )
 
 
@@ -187,6 +190,52 @@ def _separate_y_1d(*, delay, dt_from, dt_to, profit_field):
         result = result[mask]
     return result.values
 
+
+@control_output
+@memory_.cache
+def _separate_w_1d(*, delay, dt_from, dt_to):
+    df = delay_to_df[delay]
+    df_ticker = df[['ticker', 't']]
+    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
+    if mask is not None:
+        df_ticker = df_ticker[mask]
+    
+    df_agg = df_ticker.groupby('ticker').agg(
+        **{
+            't_min': pd.NamedAgg('t', 'min'),
+            't_max': pd.NamedAgg('t', 'max'),
+            'num_candles': pd.NamedAgg('t', 'count')
+        }
+    )
+    df_agg['num_days'] = (df_agg['t_max'] - df_agg['t_min']) / (3600 * 24)
+    df_agg['w'] = df_agg['num_days'] / df_agg['num_candles']
+    df_merged = df_ticker[['ticker']].merge(
+        df_agg[['w']],
+        how='left',
+        left_on='ticker',
+        right_index=True,
+        copy=False,
+    )
+    return df_merged['w'].values
+
+
+# %%
+df_agg_source = delay_to_df[180][['ticker', 't']]
+
+df_agg = df_agg_source.groupby('ticker').agg(
+    t_min=pd.NamedAgg('t', 'min'),
+    t_max=pd.NamedAgg('t', 'max'),
+    num_candles=pd.NamedAgg('t', 'count'),
+)
+df_agg['num_days'] = (df_agg['t_max'] - df_agg['t_min']) / (3600 * 24)
+df_agg['w'] = df_agg['num_days'] / df_agg['num_candles']
+df_agg_source.merge(df_agg[['w']], how='left', left_on='ticker', right_index=True, copy=False)
+
+
+# df_agg.reset_index().join(df_agg_source)
+
+# df_agg['num_days'] = (df_agg['t_max'] - df_agg['t_min']) / (3600 * 24)
+# df_agg['num_days'].value_counts()
 
 # %%
 import itertools
@@ -245,8 +294,6 @@ from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
 from sklearn import ensemble
 
-CV = False
-CV_USES_HISTOGRAM = True
 CACHE = True
 
 
@@ -267,29 +314,6 @@ def create_estimator_bins_1d(delay):
             weights=_w,
             n_jobs=-1,
         ),
-    )
-
-
-def get_cv_1d():
-    if CV_USES_HISTOGRAM:
-        return cross_validation.CrossValidation(
-            test_histogram_bins=(80, 20),
-            verbose=False,
-            cache=CACHE,
-            memory_=memory_,
-        )
-    else:
-        return cross_validation.CrossValidation(
-            verbose=False,
-            cache=CACHE,
-            memory_=memory_,
-        )
-
-
-def get_label_1d(num_days, scores):
-    return (
-        f'{num_days:<3} days'
-        # f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
     )
 
 
@@ -323,6 +347,7 @@ def plot_regressions_1d(
     relative: float | None = None,
     y_ticks_interval_minor: float | None = 0.05,
     y_ticks_interval_major: float | None = 0.2,
+    ignore_ticker_weight: bool = False,
     **kwargs,
 ):
     delay_to_Xy_1d = {
@@ -341,27 +366,11 @@ def plot_regressions_1d(
         for delay in delay_to_Xy_1d.keys()
     }
 
-    delay_to_score_bins_1d = {}
-
     for num_days, reg_bin in delay_to_regression_bins_1d.items():
-        X, y = delay_to_Xy_1d[num_days]
-        if CV:
-            n_samples = X.shape[0]
-            time_series_split = model_selection.TimeSeriesSplit(
-                n_splits=3, gap=n_samples // 40
-            )
-            scores = get_cv_1d().cross_validate(
-                reg_bin,
-                X,
-                y,
-                cv=time_series_split,
-            )
-        else:
-            scores = np.array([0])
-        delay_to_score_bins_1d[num_days] = scores
-        # label = get_label_1d(num_days, scores)
-        # print('# ' + label.replace('$R^2_{oos}$ ', ''))
-        _ = reg_bin.fit(X, y)
+        X, y, w = delay_to_Xy_1d[num_days]
+        if ignore_ticker_weight:
+            w = None
+        reg_bin.fit(X, y, w)
 
     dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
     dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
@@ -369,7 +378,6 @@ def plot_regressions_1d(
     for (num_days, reg_bin), ax in zip(
         delay_to_regression_bins_1d.items(), axes
     ):
-        scores = delay_to_score_bins_1d[num_days]
         style = delay_to_style[num_days]
         if num_color is not None:
             style += f'C{num_color}'
@@ -381,10 +389,10 @@ def plot_regressions_1d(
             relative=relative,
             **kwargs,
         )
-        ax.grid(True, which='both')        
+        ax.grid(True, which='both')
+        ax.grid(which='minor', alpha=0.25)
         title = (
-            f'{indicator_field} -> {profit_field}  '
-            f'{get_label_1d(num_days, scores)}'
+            f'{indicator_field} -> {profit_field}  {num_days:<3} days'
         )
         if relative is not None:
             title += f', relative to {relative}'
@@ -540,7 +548,8 @@ def separate_features_2d(
             dt_from,
             dt_to,
             profit_field,
-        )
+        ),
+        _separate_w_1d(delay=delay, dt_from=dt_from, dt_to=dt_to),
     )
 
 
@@ -587,8 +596,6 @@ from scipy.stats import norm
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib import cm
 
-CV = False
-CV_USES_HISTOGRAM = True
 CACHE = True
 
 
@@ -609,29 +616,6 @@ def create_estimator_bins_2d(delay):
             weights=_w,
             n_jobs=-1,
         ),
-    )
-
-
-def get_cv_2d():
-    if CV_USES_HISTOGRAM:
-        return cross_validation.CrossValidation(
-            test_histogram_bins=(80, 80, 20),
-            verbose=False,
-            cache=CACHE,
-            memory_=memory_,
-        )
-    else:
-        return cross_validation.CrossValidation(
-            verbose=False,
-            cache=CACHE,
-            memory_=memory_,
-        )
-
-
-def get_label_2d(num_days, scores):
-    return (
-        f'Ожидаемый доход, {num_days:<3} д. '
-        # f'$R^2_{{oos}}$ {scores.mean(): .5f} ± {scores.std():.5f}'
     )
 
 
@@ -691,6 +675,7 @@ def plot_regressions_2d(
     indicator_1_field,
     indicator_2_field,
     profit_field,
+    ignore_ticker_weight: bool = False
 ):
     delay_to_Xy_2d = {
         delay: separate_features_2d(
@@ -708,27 +693,12 @@ def plot_regressions_2d(
         delay: create_estimator_bins_2d(delay)
         for delay in delay_to_Xy_2d.keys()
     }
-    delay_to_score_bins_2d = {}
 
     for num_days, reg_bin in delay_to_regression_bins_2d.items():
-        X, y = delay_to_Xy_2d[num_days]
-        if CV:
-            n_samples = X.shape[0]
-            time_series_split = model_selection.TimeSeriesSplit(
-                n_splits=3, gap=n_samples // 40
-            )
-            scores = get_cv_2d().cross_validate(
-                reg_bin,
-                X,
-                y,
-                cv=time_series_split,
-            )
-        else:
-            scores = np.array([0])
-        delay_to_score_bins_2d[num_days] = scores
-        # label = get_label_2d(num_days, scores)
-        # print('# ' + label.replace('$R^2_{oos}$ ', ''))
-        _ = reg_bin.fit(X, y)
+        X, y, w = delay_to_Xy_2d[num_days]
+        if ignore_ticker_weight:
+            w = None
+        _ = reg_bin.fit(X, y, w)
 
     num_subplots = len(delay_to_regression_bins_2d)
     fig, ax = plt.subplots(
@@ -740,13 +710,13 @@ def plot_regressions_2d(
     dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
     fig.suptitle(
         f'{dt_from_str} -- {dt_to_str}   '
-        f'{indicator_1_field} x {indicator_2_field} -> {profit_field}',
+        f'{indicator_1_field} x {indicator_2_field} -> {profit_field}'
+        f'{"   no ticker w" if ignore_ticker_weight else ""}',
         fontsize=16,
     )
     for i, (num_days, reg_bin) in enumerate(
         delay_to_regression_bins_2d.items()
     ):
-        scores = delay_to_score_bins_2d[num_days]
         style = delay_to_style[num_days]
         plot_model_2d(
             ax[i],
@@ -756,7 +726,7 @@ def plot_regressions_2d(
             max_x0=+1,
             min_x1=-1,
             max_x1=+1,
-            title=get_label_2d(num_days, scores),
+            title=f'Expected income, {num_days:<3} d. ',
         )
     plt.show()
 
@@ -791,7 +761,7 @@ plot_regressions_2d(
 
 # %%
 def plot_ticker_distribution(dt_from, dt_to):
-    fig, ax = plt.subplots(figsize=(20, 10))
+    fig, ax = plt.subplots(figsize=(18, 6))
     df = delay_to_df[180]
     df = df[df['t'].between(dt_from.timestamp(), dt_to.timestamp())]
     val_counts = df['ticker'].value_counts()
@@ -864,7 +834,7 @@ def plot_histograms(*, indicator_field: str, profit_field: str) -> None:
 
     bins = (50, 50)
 
-    for i, (num_days, (X, y)) in enumerate(delay_to_Xy_1d.items()):
+    for i, (num_days, (X, y, w)) in enumerate(delay_to_Xy_1d.items()):
         # noinspection PyProtectedMember
         X_d, y_d, sample_weight = histogram.Histogram2dRegressionWrapper(
             None,
