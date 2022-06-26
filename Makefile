@@ -1,34 +1,34 @@
 jupyter:
-	conda run --live-stream -p ./envs jupyter notebook --no-browser
+	conda run --no-capture-output -p ./envs jupyter notebook --no-browser
 
 jupyterlab:
-	conda run --live-stream -p ./envs jupyter lab --no-browser
+	$(CONDA_RUN) jupyter lab --no-browser
 
 clear:
 	rm -rf ./.mypy_cache ./.pytest_cache
 	find . -not \( -type d -name .storage -prune \) -type f -name "*.pyc" -print0 | xargs -r0 rm
 
 format:
-	conda run --live-stream -p ./envs python -m brunette . \
+	$(CONDA_RUN) python -m brunette . \
 --exclude '\.jupyter/' \
 --single-quotes \
 --target-version py38 \
 --line-length 79
 
 lint:
-	conda run --live-stream -p ./envs python -m flake8
-	conda run --live-stream -p ./envs python -m mypy notebooks tests
+	$(CONDA_RUN) python -m flake8
+	$(CONDA_RUN) python -m mypy notebooks tests
 
 test:
-	conda run --live-stream -p ./envs python -m pytest -l tests
+	$(CONDA_RUN) python -m pytest -l tests
 
 # input: make test-v
 # result: pipenv run python -m pytest -lv tests
 test-%:
-	conda run --live-stream -p ./envs python -m pytest -l$* tests
+	$(CONDA_RUN) python -m pytest -l$* tests
 
 test-failed:
-	conda run --live-stream -p ./envs python -m pytest -l --last-failed tests
+	$(CONDA_RUN) python -m pytest -l --last-failed tests
 
 check: format lint test
 
@@ -41,3 +41,13 @@ env-update:
 
 
 SHELL := /usr/bin/bash
+
+# Q: why `$(CONDA_RUN) some_command` instead of just
+# `conda run --no-capture-output some_command`
+# A: code executed via conda run does not exit on interrupt
+# https://github.com/conda/conda/issues/11420
+# CONDA_ACTIVATE implementation was borrowed from
+# https://stackoverflow.com/a/71548453/6656775
+.ONESHELL:
+CONDA_ACTIVATE = source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate
+CONDA_RUN = $(CONDA_ACTIVATE) ./envs;
