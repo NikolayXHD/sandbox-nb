@@ -74,6 +74,8 @@ memory_ = Memory(
     verbose=False,
 )
 
+durations = ('4h', '3d', '24d')
+
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
         'regression',
@@ -81,16 +83,21 @@ delay_to_dir = {
         'dohodru',
         'rub',
         '2015-07-01--2021-07-01',
-        '4h_1d_3d_9d_24d_72d',
+        '_'.join(durations),
         'market_True',
         'profit_currency_USD',
-        'collect_ad_False',
+        'collect_ad_True',
         f'{delay}d',
     )
     for delay in (7, 30, 180)
 }
 
 delay_to_df = {delay: build_df(path) for delay, path in delay_to_dir.items()}
+
+# %%
+for key, df in delay_to_df.items():
+    for d in durations:
+        df[f'ad_delta_{d}'] = df[f'ad_exp_{d}'] - df[f'indicator_{d}']
 
 # %%
 delay_to_df[180]
@@ -101,7 +108,7 @@ def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
     x_field = indicator_field
     y_field = profit_field
     h, x_edges, y_edges = np.histogram2d(
-        df_k[x_field], df_k[y_field], bins=(200, 200)
+        df_k[x_field], df_k[y_field], bins=(100, 100)
     )
 
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -126,7 +133,7 @@ def plot_2d_hist(df_k, n_days, indicator_field, profit_field):
 
 
 # plot_2d_hist(delay_to_df[180], 180, 'indicator_24d', 'profit_in_currency')
-plot_2d_hist(delay_to_df[180], 180, 'indicator_market', 'profit_in_currency')
+plot_2d_hist(delay_to_df[180], 180, 'indicator_24d', 'ad_delta_24d')
 # plot_2d_hist(delay_to_df[180], 180, 'indicator_72d', 'profit_in_currency')
 
 # %%
@@ -486,6 +493,12 @@ plot_facet(
 
 # %%
 plot_facet(
+    indicator_field='ad_exp_4h',
+    relative=0,
+)
+
+# %% jupyter={"outputs_hidden": true, "source_hidden": true} tags=[]
+plot_facet(
     indicator_field='indicator_1d',
     relative=0,
 )
@@ -498,6 +511,13 @@ plot_facet(
 )
 
 # %%
+plot_facet(
+    indicator_field='ad_exp_3d',
+    relative=0,
+    figsize=(28, 10),
+)
+
+# %% jupyter={"source_hidden": true, "outputs_hidden": true} tags=[]
 plot_facet(
     indicator_field='indicator_9d',
     relative=0,
@@ -513,12 +533,19 @@ plot_facet(
 
 # %%
 plot_facet(
+    indicator_field='ad_exp_24d',
+    relative=0,
+    figsize=(28, 10),
+)
+
+# %% jupyter={"source_hidden": true, "outputs_hidden": true} tags=[]
+plot_facet(
     indicator_field='indicator_72d',
     relative=0,
     figsize=(28, 10),
 )
 
-# %%
+# %% jupyter={"outputs_hidden": true, "source_hidden": true} tags=[]
 plot_facet(
     indicator_field='indicator_market',
     relative=0,
@@ -745,16 +772,16 @@ for date_from, date_to in DATE_RANGES:
     plot_regressions_2d(
         dt_from=date_from,
         dt_to=date_to,
-        indicator_1_field='indicator_72d',
-        indicator_2_field='indicator_4h',
+        indicator_1_field='indicator_24d',
+        indicator_2_field='ad_exp_24d',
         profit_field='profit_in_currency',
     )
 
 plot_regressions_2d(
     dt_from=None,
     dt_to=None,
-    indicator_1_field='indicator_72d',
-    indicator_2_field='indicator_4h',
+    indicator_1_field='indicator_24d',
+    indicator_2_field='ad_exp_24d',
     profit_field='profit_in_currency',
 )
 
