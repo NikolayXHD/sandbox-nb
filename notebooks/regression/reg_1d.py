@@ -13,7 +13,7 @@
 # ---
 
 # %%
-from notebooks.regression.memory import control_output
+from regression.memory import control_output
 
 
 def separate_features_1d(
@@ -107,7 +107,7 @@ from datetime import datetime
 import typing
 
 from matplotlib import ticker
-from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
+from regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
 from sklearn import ensemble
 
@@ -230,16 +230,6 @@ def plot_regressions_1d(
         
         # ax.legend()
     # plt.show()
-
-
-DATE_RANGES = (
-    (datetime(2015, 6, 1, 0, 0), datetime(2016, 6, 1, 0, 0)),
-    (datetime(2016, 6, 1, 0, 0), datetime(2017, 6, 1, 0, 0)),
-    (datetime(2017, 6, 1, 0, 0), datetime(2018, 6, 1, 0, 0)),
-    (datetime(2018, 6, 1, 0, 0), datetime(2019, 6, 1, 0, 0)),
-    (datetime(2019, 6, 1, 0, 0), datetime(2020, 6, 1, 0, 0)),
-    (datetime(2020, 6, 1, 0, 0), datetime(2021, 6, 1, 0, 0)),
-)
 
 
 def plot_facet(

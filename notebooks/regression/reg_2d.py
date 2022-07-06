@@ -13,7 +13,7 @@
 # ---
 
 # %%
-from notebooks.regression.memory import control_output
+from regression.memory import control_output
 
 
 def separate_features_2d(
@@ -80,7 +80,7 @@ from datetime import datetime
 import functools
 
 from sklearn import ensemble
-from notebooks.regression.k_neighbors import KNeighborsWeightedRegressor
+from regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib import cm

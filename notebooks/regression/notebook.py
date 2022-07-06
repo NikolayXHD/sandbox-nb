@@ -16,6 +16,7 @@
 # %% cellId="r60bke4u6ugchb8rkiobw"
 from __future__ import annotations
 
+from datetime import datetime
 import os
 from pathlib import Path
 
@@ -27,8 +28,8 @@ import seaborn as sns
 from joblib.memory import Memory
 from sklearn import model_selection
 
-from notebooks.regression import cross_validation
-from notebooks.regression import histogram
+from regression import cross_validation
+from regression import histogram
 
 
 def build_df(directory: Path):
