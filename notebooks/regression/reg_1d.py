@@ -78,28 +78,11 @@ def _separate_y_1d(*, delay, dt_from, dt_to, profit_field):
 @memory_.cache
 def _separate_w_1d(*, delay, dt_from, dt_to):
     df = delay_to_df[delay]
-    df_ticker = df[['ticker', 't']]
+    s_w = df['w']
     mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
     if mask is not None:
-        df_ticker = df_ticker[mask]
-    
-    df_agg = df_ticker.groupby('ticker').agg(
-        **{
-            't_min': pd.NamedAgg('t', 'min'),
-            't_max': pd.NamedAgg('t', 'max'),
-            'num_candles': pd.NamedAgg('t', 'count')
-        }
-    )
-    df_agg['num_days'] = (df_agg['t_max'] - df_agg['t_min']) / (3600 * 24)
-    df_agg['w'] = df_agg['num_days'] / df_agg['num_candles']
-    df_merged = df_ticker[['ticker']].merge(
-        df_agg[['w']],
-        how='left',
-        left_on='ticker',
-        right_index=True,
-        copy=False,
-    )
-    return df_merged['w'].values
+         s_w = s_w[mask]
+    return s_w.values
 
 
 # %%
@@ -169,6 +152,39 @@ def plot_regressions_1d(
     radius=None,
     **kwargs,
 ):
+    delay_to_regression_bins_1d = train_1d(
+        dt_from=dt_from,
+        dt_to=dt_to,
+        indicator_field=indicator_field,
+        profit_field=profit_field,
+        ignore_ticker_weight=ignore_ticker_weight,
+        radius=radius,
+    )
+
+    plot_1d(
+        delay_to_regression_bins_1d,
+        dt_from=dt_from,
+        dt_to=dt_to,
+        indicator_field=indicator_field,
+        profit_field=profit_field,
+        axes=axes,
+        num_color=num_color,
+        relative=relative,
+        y_ticks_interval_minor=y_ticks_interval_minor,
+        y_ticks_interval_major=y_ticks_interval_major,
+        **kwargs,
+    )
+
+
+def train_1d(
+    *,
+    dt_from,
+    dt_to,
+    indicator_field,
+    profit_field,
+    ignore_ticker_weight: bool = False,
+    radius=None,
+):
     delay_to_Xy_1d = {
         delay: separate_features_1d(
             delay=delay,
@@ -190,7 +206,23 @@ def plot_regressions_1d(
         if ignore_ticker_weight:
             w = None
         reg_bin.fit(X, y, w)
+    
+    return delay_to_regression_bins_1d
 
+
+def plot_1d(
+    delay_to_regression_bins_1d,
+    dt_from,
+    dt_to,
+    indicator_field,
+    profit_field,
+    axes,
+    num_color,
+    relative,
+    y_ticks_interval_minor: float | None,
+    y_ticks_interval_major: float | None,
+    **kwargs,
+):
     dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
     dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
 
@@ -200,6 +232,7 @@ def plot_regressions_1d(
         style = delay_to_style[num_days]
         if num_color is not None:
             style += f'C{num_color}'
+
         plot_model_1d(
             reg_bin,
             ax,
@@ -208,6 +241,7 @@ def plot_regressions_1d(
             relative=relative,
             **kwargs,
         )
+
         ax.grid(True, which='both')
         ax.grid(which='minor', alpha=0.25)
         title = (
@@ -227,9 +261,6 @@ def plot_regressions_1d(
             ax.yaxis.set_major_locator(
                 ticker.MultipleLocator(y_ticks_interval_major)
             )
-        
-        # ax.legend()
-    # plt.show()
 
 
 def plot_facet(
@@ -277,14 +308,6 @@ def plot_facet(
             **kwargs,
         )
     plt.show()
-
-
-# indicator_1h
-# indicator_1d
-# indicator
-# indicator_72d
-# profit
-# profit_in_currency
 
 
 # %%

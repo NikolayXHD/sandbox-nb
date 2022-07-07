@@ -236,16 +236,6 @@ def plot_regressions_2d(
     plt.show()
 
 
-# indicator_1h
-# indicator_1d
-
-# 24d
-# indicator
-
-# indicator_72d
-# profit
-# profit_in_currency
-
 # %% pycharm={"name": "#%%\n"}
 for date_from, date_to in DATE_RANGES:
     plot_regressions_2d(
@@ -325,6 +315,120 @@ plot_regressions_2d(
     indicator_1_field='indicator_4h',
     indicator_2_field='dln_exp_no_vol_24d',
     profit_field='profit_in_currency',
+    min_x0=min_x0,
+    max_x0=max_x0,
+    min_x1=min_x1,
+    max_x1=max_x1,
+    q1=q1,
+)
+
+# %%
+indicator_1_fld = 'indicator_24d'
+indicator_2_fld = 'dln_exp_24d'
+profit_fld = 'profit_in_currency'
+
+min_x0=-1
+max_x0=+1
+min_x1 = -0.15
+max_x1 = +0.25
+q1 = 10
+
+for date_from, date_to in DATE_RANGES:
+    plot_regressions_2d(
+        dt_from=date_from,
+        dt_to=date_to,
+        indicator_1_field=indicator_1_fld,
+        indicator_2_field=indicator_2_fld,
+        profit_field=profit_fld,
+        min_x0=min_x0,
+        max_x0=max_x0,
+        min_x1=min_x1,
+        max_x1=max_x1,
+        q1=q1,
+    )
+
+plot_regressions_2d(
+    dt_from=None,
+    dt_to=None,
+    indicator_1_field=indicator_1_fld,
+    indicator_2_field=indicator_2_fld,
+    profit_field=profit_fld,
+    min_x0=min_x0,
+    max_x0=max_x0,
+    min_x1=min_x1,
+    max_x1=max_x1,
+    q1=q1,
+)
+
+# %%
+indicator_1_fld = 'indicator_4h'
+indicator_2_fld = 'dln_exp_24d'
+profit_fld = 'profit_in_currency'
+
+min_x0=-1
+max_x0=+1
+min_x1 = -0.15
+max_x1 = +0.25
+q1 = 10
+
+for date_from, date_to in DATE_RANGES:
+    plot_regressions_2d(
+        dt_from=date_from,
+        dt_to=date_to,
+        indicator_1_field=indicator_1_fld,
+        indicator_2_field=indicator_2_fld,
+        profit_field=profit_fld,
+        min_x0=min_x0,
+        max_x0=max_x0,
+        min_x1=min_x1,
+        max_x1=max_x1,
+        q1=q1,
+    )
+
+plot_regressions_2d(
+    dt_from=None,
+    dt_to=None,
+    indicator_1_field=indicator_1_fld,
+    indicator_2_field=indicator_2_fld,
+    profit_field=profit_fld,
+    min_x0=min_x0,
+    max_x0=max_x0,
+    min_x1=min_x1,
+    max_x1=max_x1,
+    q1=q1,
+)
+
+# %%
+indicator_1_fld = 'ad_exp_24d'
+indicator_2_fld = 'dln_exp_24d'
+profit_fld = 'profit_in_currency'
+
+min_x0=-1
+max_x0=+1
+min_x1 = -0.15
+max_x1 = +0.25
+q1 = 10
+
+for date_from, date_to in DATE_RANGES:
+    plot_regressions_2d(
+        dt_from=date_from,
+        dt_to=date_to,
+        indicator_1_field=indicator_1_fld,
+        indicator_2_field=indicator_2_fld,
+        profit_field=profit_fld,
+        min_x0=min_x0,
+        max_x0=max_x0,
+        min_x1=min_x1,
+        max_x1=max_x1,
+        q1=q1,
+    )
+
+plot_regressions_2d(
+    dt_from=None,
+    dt_to=None,
+    indicator_1_field=indicator_1_fld,
+    indicator_2_field=indicator_2_fld,
+    profit_field=profit_fld,
     min_x0=min_x0,
     max_x0=max_x0,
     min_x1=min_x1,
