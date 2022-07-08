@@ -160,40 +160,7 @@ DATE_RANGES = (
 delay_to_df[180]
 
 # %%
-min_v_01d = 0.25
-min_v_72d = 0.05
+df['dln_exp_no_vol_24d'].describe()
 
-month = 6
-
-for delay in (7, 30, 180):
-    print(delay)
-    for year in (2015, 2016, 2017, 2018, 2019, 2020):
-        df_all = delay_to_df[delay]
-        print(f'    {year}.{month} -- {year + 1}.{month}')
-        time_mask = df_all['t'].between(
-            datetime(year, month, 1, 0, 0).timestamp(),
-            datetime(year + 1, month, 1, 0, 0).timestamp() - 1,
-        )
-        df = df_all[time_mask]
-
-        hot_mask = (df['indicator_4h'] < -min_v_01d) & (
-            df['indicator_72d'] > min_v_72d
-        )
-        col_mask = (df['indicator_4h'] > +min_v_01d) & (
-            df['indicator_72d'] > min_v_72d
-        )
-
-        print(
-            f'    hot:  {df[hot_mask]["profit"].mean():.2f}, '
-            f'freq: {hot_mask.sum() / len(df):.3f}'
-        )
-        print(
-            f'    cold: {df[col_mask]["profit"].mean():.2f}, '
-            f'freq: {col_mask.sum() / len(df):.3f}'
-        )
-        print(
-            f'    h+c:  {df[col_mask|hot_mask]["profit"].mean():.2f}, '
-            f'freq: {(col_mask.sum() + hot_mask.sum()) / len(df):.3f}'
-        )
-        print(f'    oth:  {df[~(col_mask|hot_mask)]["profit"].mean():.2f}')
-        print()
+# %%
+df['dln_exp_3d'].describe()

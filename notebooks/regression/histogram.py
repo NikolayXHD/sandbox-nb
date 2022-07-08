@@ -18,36 +18,22 @@ def plot_2d_hist(
     n_days,
     indicator_field,
     profit_field,
-    figsize=(10, 10),
     ax=None
 ):
-    x_field = indicator_field
-    y_field = profit_field
-    h, x_edges, y_edges = np.histogram2d(
-        df_k[x_field], df_k[y_field], bins=(400, 400)
+    ax.grid(False)
+    ax.hist2d(
+        df_k[indicator_field],
+        df_k[profit_field],
+        bins=(400, 400),
+        cmin=1,
+        cmap='Blues'
     )
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    ax.set_title(f'доход через {n_days} дней, в пересчёте на 1 год')
-
-    v_max_color = h.max()
-    v_min_color = h[h > 0].min()
-    v_num_color = 255
-
-    ax.contourf(
-        h,
-        extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]],
-        levels=np.linspace(
-            v_min_color,
-            v_max_color,
-            num=v_num_color,
-        ),
-        cmap='Blues',
-    )
+    ax.xaxis.grid(True)
+    ax.yaxis.grid(True)
 
 
 # %%
-fig, axes = plt.subplots(figsize=(20, 15), ncols=3)
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
 
 for i, num_days in enumerate(delay_to_df.keys()):
     plot_2d_hist(
@@ -61,7 +47,7 @@ for i, num_days in enumerate(delay_to_df.keys()):
 plt.show()
 
 # %%
-fig, axes = plt.subplots(figsize=(20, 15), ncols=3)
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
 
 for i, num_days in enumerate(delay_to_df.keys()):
     plot_2d_hist(
@@ -103,40 +89,113 @@ for i, num_days in enumerate(delay_to_df.keys()):
 plt.show()
 
 # %%
-fig, ax = plt.subplots(figsize=(15, 15))
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
 
-plot_2d_hist(
-        delay_to_df[7],
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
         num_days,
-        'indicator_24d',
-        'ad_exp_24d',
-        ax=ax,
+        'dln_exp_3d',
+        'profit_in_currency',
+        ax=axes[i],
     )
 
 plt.show()
 
 # %%
-fig, ax = plt.subplots(figsize=(28, 8))
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
 
-plot_2d_hist(
-        delay_to_df[7],
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
+        num_days,
+        'dln_exp_no_vol_3d',
+        'profit_in_currency',
+        ax=axes[i],
+    )
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(figsize=(30, 8), ncols=3)
+
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
+        num_days,
+        'indicator_3d',
+        'profit_in_currency',
+        ax=axes[i],
+    )
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(figsize=(30, 8), ncols=3)
+
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
+        num_days,
+        'ad_exp_3d',
+        'profit_in_currency',
+        ax=axes[i],
+    )
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
+
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
+        num_days,
+        'dln_exp_4h',
+        'profit_in_currency',
+        ax=axes[i],
+    )
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(figsize=(20, 15), nrows=3)
+
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
+        num_days,
+        'dln_exp_no_vol_4h',
+        'profit_in_currency',
+        ax=axes[i],
+    )
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(figsize=(30, 8), ncols=3)
+
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
         num_days,
         'indicator_4h',
-        'dln_exp_no_vol_24d',
-        ax=ax,
+        'profit_in_currency',
+        ax=axes[i],
     )
 
 plt.show()
 
 # %%
-fig, ax = plt.subplots(figsize=(25, 20))
+fig, axes = plt.subplots(figsize=(30, 8), ncols=3)
 
-plot_2d_hist(
-        delay_to_df[7],
+for i, num_days in enumerate(delay_to_df.keys()):
+    plot_2d_hist(
+        delay_to_df[num_days],
         num_days,
-        'dln_exp_24d',
-        'dln_exp_no_vol_24d',
-        ax=ax,
+        'ad_exp_4h',
+        'profit_in_currency',
+        ax=axes[i],
     )
 
 plt.show()

@@ -313,19 +313,19 @@ def plot_facet(
 # %%
 plot_facet(
     indicator_field='indicator_4h',
-    relative=0,
+    # relative=0,
 )
 
 # %%
 plot_facet(
     indicator_field='ad_exp_4h',
-    relative=0,
+    # relative=0,
 )
 
 # %%
 plot_facet(
     indicator_field='dln_exp_4h',
-    relative=0,
+    relative=+0.055,
     min_x=-0.15,
     max_x=+0.25,
     radius=0.02,
@@ -334,7 +334,7 @@ plot_facet(
 # %%
 plot_facet(
     indicator_field='dln_exp_no_vol_4h',
-    relative=0,
+    # relative=0,
     min_x=-0.15,
     max_x=+0.25,
     radius=0.015,
@@ -343,21 +343,21 @@ plot_facet(
 # %%
 plot_facet(
     indicator_field='indicator_3d',
-    relative=0,
+    relative=-0.5,
     figsize=(28, 10),
 )
 
 # %%
 plot_facet(
     indicator_field='ad_exp_3d',
-    relative=0,
+    # relative=0,
     figsize=(28, 10),
 )
 
 # %%
 plot_facet(
     indicator_field='dln_exp_3d',
-    relative=0,
+    relative=-0.05,
     figsize=(28, 10),
     min_x=-0.15,
     max_x=+0.25,
@@ -367,7 +367,7 @@ plot_facet(
 # %%
 plot_facet(
     indicator_field='dln_exp_no_vol_3d',
-    relative=0,
+    relative=0.02,
     figsize=(28, 10),
     min_x=-0.15,
     max_x=+0.25,
@@ -377,21 +377,21 @@ plot_facet(
 # %%
 plot_facet(
     indicator_field='indicator_24d',
-    relative=0,
+    relative=+0.45,
     figsize=(28, 10),
 )
 
 # %%
 plot_facet(
     indicator_field='ad_exp_24d',
-    relative=0,
+    # relative=0,
     figsize=(28, 10),
 )
 
 # %%
 plot_facet(
     indicator_field='dln_exp_24d',
-    relative=0,
+    relative=-0.0075,
     figsize=(28, 10),
     min_x=-0.15,
     max_x=+0.25,
@@ -401,7 +401,7 @@ plot_facet(
 # %%
 plot_facet(
     indicator_field='dln_exp_no_vol_24d',
-    relative=0,
+    relative=-0.0075,
     figsize=(28, 10),
     min_x=-0.15,
     max_x=+0.25,

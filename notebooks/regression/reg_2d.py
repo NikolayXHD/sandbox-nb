@@ -88,9 +88,7 @@ from matplotlib import cm
 CACHE = True
 
 
-def create_estimator_bins_2d(delay):
-    radius = 0.12
-
+def create_estimator_bins_2d(delay, radius):
     def _w(d):
         return norm.pdf(d / radius)
 
@@ -130,14 +128,14 @@ def plot_model_2d(
     assert X.shape == Y.shape
     Z = y_pred.reshape(X.shape)
 
-    v_min_color = -5.0
-    v_max_color = +5.0
+    v_min_color = -4.0
+    v_max_color = +4.0
     v_step_color = 0.10
     v_num_color = 1 + int(round((v_max_color - v_min_color) / v_step_color))
 
-    v_min_line = -5.0
-    v_max_line = +5.0
-    v_step_line = 0.40
+    v_min_line = -10.0
+    v_max_line = +10.0
+    v_step_line = 0.5
     v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
 
     color_norm = TwoSlopeNorm(0, v_min_color, v_max_color)
@@ -179,6 +177,7 @@ def plot_regressions_2d(
     min_x1=-1,
     max_x1=+1,
     q1=1,
+    radius=0.1,
 ):
     delay_to_Xy_2d = {
         delay: separate_features_2d(
@@ -193,7 +192,7 @@ def plot_regressions_2d(
         # if delay == 180
     }
     delay_to_regression_bins_2d = {
-        delay: create_estimator_bins_2d(delay)
+        delay: create_estimator_bins_2d(delay, radius=radius)
         for delay in delay_to_Xy_2d.keys()
     }
 
@@ -235,6 +234,47 @@ def plot_regressions_2d(
         )
     plt.show()
 
+
+# %%
+indicator_1_fld = 'dln_exp_3d'
+indicator_2_fld = 'dln_exp_no_vol_24d'
+profit_fld = 'profit_in_currency'
+
+min_x0=-0.1
+max_x0=+0.3
+min_x1=-0.05
+max_x1=+0.075
+q1 = 2
+radius=0.02
+
+for date_from, date_to in DATE_RANGES:
+    plot_regressions_2d(
+        dt_from=date_from,
+        dt_to=date_to,
+        indicator_1_field=indicator_1_fld,
+        indicator_2_field=indicator_2_fld,
+        profit_field=profit_fld,
+        min_x0=min_x0,
+        max_x0=max_x0,
+        min_x1=min_x1,
+        max_x1=max_x1,
+        q1=q1,
+        radius=radius,
+    )
+
+plot_regressions_2d(
+    dt_from=None,
+    dt_to=None,
+    indicator_1_field=indicator_1_fld,
+    indicator_2_field=indicator_2_fld,
+    profit_field=profit_fld,
+    min_x0=min_x0,
+    max_x0=max_x0,
+    min_x1=min_x1,
+    max_x1=max_x1,
+    q1=q1,
+    radius=radius,
+)
 
 # %% pycharm={"name": "#%%\n"}
 for date_from, date_to in DATE_RANGES:
