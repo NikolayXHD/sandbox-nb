@@ -4,6 +4,8 @@ jupyter:
 jupyterlab:
 	$(CONDA_RUN) jupyter lab --no-browser
 
+lab: jupyterlab
+
 clear:
 	rm -rf ./.mypy_cache ./.pytest_cache
 	find . -not \( -type d -name .storage -prune \) -type f -name "*.pyc" -print0 | xargs -r0 rm
