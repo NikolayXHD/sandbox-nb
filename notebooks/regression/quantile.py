@@ -64,7 +64,7 @@ df_indicator_quantiles
 # %%
 fig, ax = plt.subplots(figsize=(20, 10))
 sns.lineplot(data=df_indicator_quantiles, ax=ax)
-plt.xticks(rotation = 45)
+plt.xticks(rotation=45)
 plt.show()
 
 # %%

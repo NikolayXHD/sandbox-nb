@@ -47,11 +47,11 @@ df_agg_source = df_agg_source.assign(
     **{'d': df_agg_source['t'] // (3600 * 24)}
 )
 
-df_agg_day_ticker = df_agg_source.groupby(
-    ['d', 'ticker']
-).agg(
-    **{'n_td': ('t', 'count')}
-).reset_index()
+df_agg_day_ticker = (
+    df_agg_source.groupby(['d', 'ticker'])
+    .agg(**{'n_td': ('t', 'count')})
+    .reset_index()
+)
 
 df_agg_day_ticker = df_agg_day_ticker.assign(
     **{'ln_n_td': np.log(1 + df_agg_day_ticker['n_td'])}
@@ -61,16 +61,16 @@ df_agg_day_ticker = df_agg_day_ticker.assign(
 df_agg_day_ticker
 
 # %%
-df_agg_day = df_agg_day_ticker.groupby('d').agg(
-    **{'sum_t_ln_n_td': ('ln_n_td', 'sum')}
-).reset_index()
+df_agg_day = (
+    df_agg_day_ticker.groupby('d')
+    .agg(**{'sum_t_ln_n_td': ('ln_n_td', 'sum')})
+    .reset_index()
+)
 
 df_agg_day
 
 # %%
-df_agg_result = df_agg_source.merge(
-    df_agg_day, on='d', copy=False
-).merge(
+df_agg_result = df_agg_source.merge(df_agg_day, on='d', copy=False).merge(
     df_agg_day_ticker, on=('d', 'ticker'), copy=False
 )
 
@@ -78,7 +78,11 @@ df_agg_result
 
 # %%
 df_agg_result = df_agg_result.assign(
-    **{'w': df_agg_result['ln_n_td'] / df_agg_result['n_td'] / df_agg_result['sum_t_ln_n_td'] }
+    **{
+        'w': df_agg_result['ln_n_td']
+        / df_agg_result['n_td']
+        / df_agg_result['sum_t_ln_n_td']
+    }
 )
 
 df_agg_result
@@ -94,9 +98,11 @@ import matplotlib
 from matplotlib import pyplot as plt
 import seaborn as sns
 
+
 def plot_days():
     days = df_agg_source['d'].value_counts()
     sns.lineplot(x=days.index, y=days.values)
+
 
 plot_days()
 
@@ -114,9 +120,10 @@ def plot_ticker_distribution(dt_from, dt_to):
     df = df[df['t'].between(dt_from.timestamp(), dt_to.timestamp())]
     val_counts = df['ticker'].value_counts()
     plt.bar(val_counts.index, val_counts.values)
-    plt.xticks(rotation = 90)
+    plt.xticks(rotation=90)
     ax.set_title(f'{dt_from.date()} -- {dt_to.date()}')
     plt.show()
+
 
 for dt_from, dt_to in DATE_RANGES:
     plot_ticker_distribution(dt_from, dt_to)

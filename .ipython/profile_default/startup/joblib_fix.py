@@ -96,6 +96,7 @@ except ImportError:
     pass
 else:
     from joblib.func_inspect import _clean_win_chars
+
     joblib.func_inspect.get_func_name = get_func_name
 
     import joblib
