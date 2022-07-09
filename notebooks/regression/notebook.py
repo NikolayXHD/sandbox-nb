@@ -65,10 +65,25 @@ delay_to_dir = {
     for delay in (7, 30, 180)
 }
 
-delay_to_df = {
-    delay: build_df(path, max_list_level=3)
+# Full dataset, including most recent year.
+# Never use it to find regularities in data, rather use it to
+# validate the findings
+delay_to_df_validate = {
+    delay: build_df(path, max_list_level=2)
     for delay, path in delay_to_dir.items()
 }
+
+DATE_RANGES = tuple(
+    (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
+    for y in range(2015, 2022)
+)
+delay_to_df = {}
+for delay, df in delay_to_df_validate.items():
+    delay_to_df[delay] = df.iloc[
+        : np.searchsorted(
+            df['t'], DATE_RANGES[-1][0].timestamp()
+        )
+    ]
 
 time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
 
@@ -76,15 +91,6 @@ memory_ = Memory(
     str(CACHE_STORAGE_PATH),
     mmap_mode='r',
     verbose=False,
-)
-
-DATE_RANGES = (
-    (datetime(2015, 6, 1, 0, 0), datetime(2016, 6, 1, 0, 0)),
-    (datetime(2016, 6, 1, 0, 0), datetime(2017, 6, 1, 0, 0)),
-    (datetime(2017, 6, 1, 0, 0), datetime(2018, 6, 1, 0, 0)),
-    (datetime(2018, 6, 1, 0, 0), datetime(2019, 6, 1, 0, 0)),
-    (datetime(2019, 6, 1, 0, 0), datetime(2020, 6, 1, 0, 0)),
-    (datetime(2020, 6, 1, 0, 0), datetime(2021, 6, 1, 0, 0)),
 )
 
 # %%
