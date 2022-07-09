@@ -30,80 +30,7 @@ from sklearn import model_selection
 
 from regression import cross_validation
 from regression import histogram
-
-
-def build_df(directory: Path):
-    parts: list[pd.DataFrame] = []
-    last_msg: str | None = None
-    files = sorted(directory.glob('*.feather'))
-    tickers = [f.stem for f in files]
-    
-    print(directory.resolve())
-    for i, f in enumerate(files):
-        if last_msg is not None:
-            print('\r' + ' ' * len(last_msg) + '\r', end='')
-        last_msg = f'{f.name} {i + 1} / {len(files)}'
-        print(last_msg, end='')
-        df_specific_ticker = pd.read_feather(f)
-        df_specific_ticker['ticker'] = pd.Categorical(
-            [f.stem] * len(df_specific_ticker), categories=tickers
-        )
-        parts.append(df_specific_ticker)
-    print()
-    df = pd.concat(parts)
-    df.sort_values(by=['t'], inplace=True)
-    df = df.assign(**{'w': get_w(df)})
-    return df
-
-
-def get_w(df):
-    """
-    Formula for weight is explained in balancing.py notebook
-    It satisfies 2 goals
-    1. sum of weights per 1 day is always same (== 1)
-    2. sum of weights of specific ticker for a given day is proportinal
-       to logarightm of number of candles (n_samples). Without weight it
-       would be proportional to number of candles (without logarithm)
-    
-    summary:
-    1. all days have same weight, perfectly balanced
-    2. tickers within day are less unbalanced
-    
-    Why not perfectly balance 2. as well?
-    to reflect the fact it's still harder to buy / sell when
-    number of candles is smaller
-    """
-    df_agg_source = df[['ticker', 't']]
-    df_agg_source = df_agg_source.assign(
-        **{'d': df_agg_source['t'] // (3600 * 24)}
-    )
-    
-    df_agg_day_ticker = df_agg_source.groupby(
-        ['d', 'ticker']
-    ).agg(
-        **{'n_td': ('t', 'count')}
-    ).reset_index()
-
-    df_agg_day_ticker = df_agg_day_ticker.assign(
-        **{'ln_n_td': np.log(1 + df_agg_day_ticker['n_td'])}
-    )
-    
-    df_agg_day = df_agg_day_ticker.groupby('d').agg(
-        **{'sum_t_ln_n_td': ('ln_n_td', 'sum')}
-    ).reset_index()
-    
-    df_agg_result = df_agg_source.merge(
-        df_agg_day, on='d', copy=False
-    ).merge(
-        df_agg_day_ticker, on=('d', 'ticker'), copy=False
-    )
-    
-    return (
-        df_agg_result['ln_n_td']
-        / df_agg_result['n_td']
-        / df_agg_result['sum_t_ln_n_td'] 
-    )
-
+from regression.load import build_df
 
 PWD = Path(os.path.dirname(os.path.realpath('__file__')))
 CACHE_STORAGE_PATH = PWD.joinpath('..', '..', '.storage', 'cache')
@@ -129,7 +56,8 @@ delay_to_dir = {
         '_'.join(durations),
         'market_False',
         'profit_currency_USD',
-        'ad_True',
+        'cmf_False',
+        'ad_False',
         'dln_True',
         'dln_no_vol_True',
         f'{delay}d',
@@ -137,7 +65,10 @@ delay_to_dir = {
     for delay in (7, 30, 180)
 }
 
-delay_to_df = {delay: build_df(path) for delay, path in delay_to_dir.items()}
+delay_to_df = {
+    delay: build_df(path, max_list_level=3)
+    for delay, path in delay_to_dir.items()
+}
 
 time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
 
@@ -158,9 +89,3 @@ DATE_RANGES = (
 
 # %%
 delay_to_df[180]
-
-# %%
-df['dln_exp_no_vol_24d'].describe()
-
-# %%
-df['dln_exp_3d'].describe()
