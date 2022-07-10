@@ -17,60 +17,26 @@ from regression.memory import control_output
 
 
 def separate_features_2d(
-    delay,
-    dt_from,
-    dt_to,
-    indicator_1_field,
-    indicator_2_field,
-    profit_field,
+    *,
+    delay: int,
+    date_from: datetime | None,
+    date_to: datetime | None,
+    indicator_1_field: str,
+    indicator_2_field: str,
+    profit_field: str,
+    use_validation_df: bool,
 ):
-    return (
-        _separate_indicators_2d(
-            delay,
-            dt_from,
-            dt_to,
-            indicator_1_field,
-            indicator_2_field,
-        ),
-        _separate_profit_2d(
-            delay,
-            dt_from,
-            dt_to,
-            profit_field,
-        ),
-        _separate_w_1d(delay=delay, dt_from=dt_from, dt_to=dt_to),
+    df = get_df(
+        delay=delay,
+        date_from=date_from,
+        date_to=date_to,
+        use_validation_df=use_validation_df,
     )
-
-
-@control_output
-@memory_.cache
-def _separate_indicators_2d(
-    delay,
-    dt_from,
-    dt_to,
-    indicator_1_field,
-    indicator_2_field,
-):
-    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
-    df = delay_to_df[delay]
-    if mask is not None:
-        df = df[mask]
-    return df[[indicator_1_field, indicator_2_field]].values
-
-
-@control_output
-@memory_.cache
-def _separate_profit_2d(
-    delay,
-    dt_from,
-    dt_to,
-    profit_field,
-):
-    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
-    df = delay_to_df[delay]
-    if mask is not None:
-        df = df[mask]
-    return df[profit_field].values
+    return (
+        df[[indicator_1_field, indicator_2_field]].values,
+        df[profit_field].values,
+        df['w'].values,
+    )
 
 
 # %% pycharm={"name": "#%%\n"}
@@ -110,55 +76,67 @@ def plot_model_2d(
     ax,
     reg_k,
     *args,
-    min_x0=-1,
-    max_x0=+1,
     q1,
-    min_x1,
-    max_x1,
     title,
+    hist_x,
+    hist_w,
+    min_x0: float,
+    max_x0: float,
+    min_x1: float,
+    max_x1: float,
+    alpha: float = 1,
+    v_min_color: float = -5,
+    v_max_color: float = +5,
+    v_min_line: float = -10,
+    v_max_line: float = +10,
+    v_step_line: float = 0.2,
+    bins: typing.Tuple[int, int] = (100, 100),
 ):
-    x = np.linspace(min_x0, max_x0, num=100)
-    y = np.linspace(min_x1, max_x1, num=100)
+    hist, x_edges, y_edges = np.histogram2d(
+        hist_x[:,0],
+        hist_x[:,1],
+        weights=hist_w,
+        range=((min_x0, max_x0), (min_x1, max_x1)),
+        bins=bins,
+    )
+    
+    x = np.linspace(min_x0, max_x0, num=bins[0])
+    y = np.linspace(min_x1, max_x1, num=bins[1])
     g = np.meshgrid(x, y)
+    X, Y = g
+
     X_pred = np.array(g).reshape(2, -1).T
     X_pred_scaled = X_pred * np.array([[1, q1]])
     y_pred = reg_k.predict(X_pred_scaled)
 
-    X, Y = g
     assert X.shape == Y.shape
-    Z = y_pred.reshape(X.shape)
+    Z = y_pred.reshape(X.shape)    
 
-    v_min_color = -4.0
-    v_max_color = +4.0
-    v_step_color = 0.05
-    v_num_color = 1 + int(round((v_max_color - v_min_color) / v_step_color))
-
-    v_min_line = -10.0
-    v_max_line = +10.0
-    v_step_line = 0.40
     v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
 
-    color_norm = TwoSlopeNorm(0, v_min_color, v_max_color)
-    CS = ax.contourf(
-        X,
-        Y,
+    hist_min = hist[hist > 0].min()
+    alphas = np.log(np.maximum(hist, hist_min) / hist_min)
+    alphas = alphas * ((1 - alpha) / alphas.max()) + alpha
+
+    ax.imshow(
         Z,
-        levels=np.linspace(
-            v_min_color,
-            v_max_color,
-            num=v_num_color,
-        ),
-        norm=color_norm,
+        vmin=v_min_color,
+        vmax=v_max_color,
         cmap='RdBu',
+        aspect=(max_x0 - min_x0) / (max_x1 - min_x1),
+        extent=(min_x0, max_x0, min_x1, max_x1),
+        origin='lower',
+        alpha=alphas,
     )
     ax.set_title(title)
     CS2 = ax.contour(
-        CS,
+        Z,
         levels=np.linspace(
             v_min_line,
             v_max_line,
             num=v_num_line,
         ),
+        extent=(min_x0, max_x0, min_x1, max_x1),
         colors='black',
         linewidths=2,
     )
@@ -166,27 +144,35 @@ def plot_model_2d(
 
 
 def plot_regressions_2d(
-    dt_from,
-    dt_to,
-    indicator_1_field,
-    indicator_2_field,
-    profit_field,
+    date_from: datetime,
+    date_to: datetime,
+    indicator_1_field: str,
+    indicator_2_field: str,
+    min_x0: float = -1,
+    max_x0: float = +1,
+    min_x1: float = -1,
+    max_x1: float = +1,
+    q1: float | None = None,
+    radius: float | None = None,
+    profit_field: str = 'profit_in_currency',
     ignore_ticker_weight: bool = False,
-    min_x0=-1,
-    max_x0=+1,
-    min_x1=-1,
-    max_x1=+1,
-    q1=1,
-    radius=0.1,
-):
+    use_validation_df: bool = False,
+    **kwargs,
+) -> None:
+    if radius is None:
+        radius = 0.1
+    if q1 is None:
+        q1 = (max_x0 - min_x0) / (max_x1 - min_x1)
+
     delay_to_Xy_2d = {
         delay: separate_features_2d(
             delay=delay,
-            dt_from=dt_from,
-            dt_to=dt_to,
+            date_from=date_from,
+            date_to=date_to,
             indicator_1_field=indicator_1_field,
             indicator_2_field=indicator_2_field,
             profit_field=profit_field,
+            use_validation_df=use_validation_df,
         )
         for delay, df in delay_to_df.items()
         # if delay == 180
@@ -207,12 +193,8 @@ def plot_regressions_2d(
     fig, ax = plt.subplots(
         1, num_subplots, figsize=((9 + 1) * num_subplots, 9)
     )
-    # fig.tight_layout()
-
-    dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
-    dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
     fig.suptitle(
-        f'{dt_from_str} -- {dt_to_str}   '
+        f'{format_date(date_from)} -- {format_date(date_to)}   '
         f'{indicator_1_field} x {indicator_2_field} -> {profit_field}'
         f'{"   no ticker w" if ignore_ticker_weight else ""}',
         fontsize=16,
@@ -220,6 +202,7 @@ def plot_regressions_2d(
     for i, (num_days, reg_bin) in enumerate(
         delay_to_regression_bins_2d.items()
     ):
+        X, y, w = delay_to_Xy_2d[num_days]
         style = delay_to_style[num_days]
         plot_model_2d(
             ax[i],
@@ -231,335 +214,146 @@ def plot_regressions_2d(
             min_x1=min_x1,
             max_x1=max_x1,
             title=f'Expected income, {num_days:<3} d. ',
+            hist_x=X,
+            hist_w=w,
+            **kwargs,
         )
     plt.show()
 
 
-# %%
-indicator_1_fld = 'dln_exp_3d'
-min_x0=-0.1
-max_x0=+0.1
+def plot_facet_2d(use_validation_df: bool = False, **kwargs):
+    for date_from, date_to in iterate_date_ranges(
+        append_empty_range=True, use_validation_df=use_validation_df
+    ):
+        plot_regressions_2d(
+            date_from=date_from,
+            date_to=date_to,
+            use_validation_df=use_validation_df,
+            **kwargs,
+        )
 
-
-indicator_2_fld = 'dln_exp_no_vol_24d'
-min_x1=-0.03
-max_x1=+0.03
-q1 = (max_x0 - min_x0) / (max_x1 - min_x1)
-
-profit_fld = 'profit_in_currency'
-
-radius=0.010
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-        radius=radius,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
-    radius=radius,
-)
 
 # %%
-indicator_1_fld = 'dln_exp_4h'
-min_x0=-0.1
-max_x0=+0.1
-
-
-indicator_2_fld = 'dln_exp_no_vol_24d'
-min_x1=-0.03
-max_x1=+0.03
-q1 = (max_x0 - min_x0) / (max_x1 - min_x1)
-
-profit_fld = 'profit_in_currency'
-
-radius=0.010
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-        radius=radius,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
-    radius=radius,
+plot_facet_2d(
+    indicator_1_field='dln_exp_3d',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    indicator_2_field='dln_exp_no_vol_24d',
+    min_x1=-0.04,
+    max_x1=+0.04,
+    radius=0.012,    
+    alpha=0.5,
+    v_step_line=0.25,
 )
 
-# %%
-indicator_1_fld = 'dln_exp_3d'
-indicator_2_fld = 'dln_exp_no_vol_24d'
-profit_fld = 'profit_in_currency'
-
-min_x0=-0.1
-max_x0=+0.3
-min_x1=-0.05
-max_x1=+0.075
-q1 = 2
-radius=0.02
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-        radius=radius,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
-    radius=radius,
+# %% tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_exp_3d',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    indicator_2_field='dln_exp_no_vol_24d',
+    min_x1=-0.04,
+    max_x1=+0.04,
+    radius=0.012,
+    use_validation_df=True,
 )
 
-# %% pycharm={"name": "#%%\n"}
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field='indicator_24d',
-        indicator_2_field='ad_exp_24d',
-        profit_field='profit_in_currency',
-    )
+# %% tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_exp_3d',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    indicator_2_field='dln_exp_no_vol_24d',
+    min_x1=-0.04,
+    max_x1=+0.04,
+    radius=0.012,
+)
 
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_exp_3d',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    indicator_2_field='dln_exp_no_vol_72d',
+    min_x1=-0.0125,
+    max_x1=+0.0100,
+    radius=0.010,
+)
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_exp_24d',
+    indicator_2_field='dln_exp_no_vol_24d',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    min_x1=-0.03,
+    max_x1=+0.03,
+    radius=0.007,
+)
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_exp_4h',
+    min_x0=-0.1,
+    max_x0=+0.1,
+    indicator_2_field='dln_exp_no_vol_24d',
+    min_x1=-0.03,
+    max_x1=+0.03,
+    radius=0.010,
+)
+
+# %% pycharm={"name": "#%%\n"} tags=[]
+plot_facet_2d(
     indicator_1_field='indicator_24d',
     indicator_2_field='ad_exp_24d',
-    profit_field='profit_in_currency',
 )
 
 # %%
-min_x0=-1
-max_x0=+1
-min_x1 = -0.15
-max_x1 = +0.25
-q1 = 10
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field='indicator_24d',
-        indicator_2_field='dln_exp_no_vol_24d',
-        profit_field='profit_in_currency',
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
+plot_facet_2d(
     indicator_1_field='indicator_24d',
+    min_x0=-1,
+    max_x0=+1,
     indicator_2_field='dln_exp_no_vol_24d',
-    profit_field='profit_in_currency',
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
+    min_x1=-0.15,
+    max_x1=+0.25,
 )
 
 # %%
-min_x0=-1
-max_x0=+1
-min_x1 = -0.15
-max_x1 = +0.25
-q1 = 10
+plot_facet_2d(
+    indicator_1_field='indicator_24d',
+    min_x0=-1,
+    max_x0=+1,
+    indicator_2_field='dln_exp_24d',
+    min_x1=-0.15,
+    max_x1=+0.25,
+)
 
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field='indicator_4h',
-        indicator_2_field='dln_exp_no_vol_24d',
-        profit_field='profit_in_currency',
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-    )
+# %%
+plot_facet_2d(
+    indicator_1_field='ad_exp_24d',
+    min_x0=-1,
+    max_x0=+1,
+    indicator_2_field='dln_exp_24d',
+    min_x1=-0.15,
+    max_x1=+0.25,
+)
 
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
+# %%
+plot_facet_2d(
     indicator_1_field='indicator_4h',
+    min_x0=-1,
+    max_x0=+1,
     indicator_2_field='dln_exp_no_vol_24d',
-    profit_field='profit_in_currency',
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
+    min_x1=-0.15,
+    max_x1=+0.25,
 )
 
 # %%
-indicator_1_fld = 'indicator_24d'
-indicator_2_fld = 'dln_exp_24d'
-profit_fld = 'profit_in_currency'
-
-min_x0=-1
-max_x0=+1
-min_x1 = -0.15
-max_x1 = +0.25
-q1 = 10
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
-)
-
-# %%
-indicator_1_fld = 'indicator_4h'
-indicator_2_fld = 'dln_exp_24d'
-profit_fld = 'profit_in_currency'
-
-min_x0=-1
-max_x0=+1
-min_x1 = -0.15
-max_x1 = +0.25
-q1 = 10
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
-)
-
-# %%
-indicator_1_fld = 'ad_exp_24d'
-indicator_2_fld = 'dln_exp_24d'
-profit_fld = 'profit_in_currency'
-
-min_x0=-1
-max_x0=+1
-min_x1 = -0.15
-max_x1 = +0.25
-q1 = 10
-
-for date_from, date_to in DATE_RANGES:
-    plot_regressions_2d(
-        dt_from=date_from,
-        dt_to=date_to,
-        indicator_1_field=indicator_1_fld,
-        indicator_2_field=indicator_2_fld,
-        profit_field=profit_fld,
-        min_x0=min_x0,
-        max_x0=max_x0,
-        min_x1=min_x1,
-        max_x1=max_x1,
-        q1=q1,
-    )
-
-plot_regressions_2d(
-    dt_from=None,
-    dt_to=None,
-    indicator_1_field=indicator_1_fld,
-    indicator_2_field=indicator_2_fld,
-    profit_field=profit_fld,
-    min_x0=min_x0,
-    max_x0=max_x0,
-    min_x1=min_x1,
-    max_x1=max_x1,
-    q1=q1,
+plot_facet_2d(
+    indicator_1_field='indicator_4h',
+    min_x0=-1,
+    max_x0=+1,
+    indicator_2_field='dln_exp_24d',
+    min_x1=-0.15,
+    max_x1=+0.25,
 )

@@ -17,72 +17,25 @@ from regression.memory import control_output
 
 
 def separate_features_1d(
-    *, delay, dt_from, dt_to, indicator_field, profit_field
+    *,
+    delay: int,
+    date_from: datetime | None,
+    date_to: datetime | None,
+    indicator_field: str,
+    profit_field: str,
+    use_validation_df: bool = False,
 ):
-    return (
-        _separate_X_1d(
-            delay=delay,
-            dt_from=dt_from,
-            dt_to=dt_to,
-            indicator_field=indicator_field,
-        ),
-        _separate_y_1d(
-            delay=delay,
-            dt_from=dt_from,
-            dt_to=dt_to,
-            profit_field=profit_field,
-        ),
-        _separate_w_1d(
-            delay=delay, dt_from=dt_from, dt_to=dt_to
-        ),
+    df = get_df(
+        delay=delay,
+        date_from=date_from,
+        date_to=date_to,
+        use_validation_df=use_validation_df,
     )
-
-
-@control_output
-@memory_.cache
-def _mask_1d(*, delay, dt_from, dt_to):
-    df_i = delay_to_df[delay]
-    if dt_from is not None and dt_to is not None:
-        return df_i['t'].between(dt_from.timestamp(), dt_to.timestamp())
-    elif dt_from is not None:
-        return df_i['t'] >= dt_from.timestamp()
-    elif dt_to is not None:
-        return df_i['t'] <= dt_to.timestamp()
-    else:
-        return None
-
-
-@control_output
-@memory_.cache
-def _separate_X_1d(*, delay, dt_from, dt_to, indicator_field):
-    df = delay_to_df[delay]
-    result = df[[indicator_field]]
-    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
-    if mask is not None:
-        result = result[mask]
-    return result.values
-
-
-@control_output
-@memory_.cache
-def _separate_y_1d(*, delay, dt_from, dt_to, profit_field):
-    df = delay_to_df[delay]
-    result = df[profit_field]
-    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
-    if mask is not None:
-        result = result[mask]
-    return result.values
-
-
-@control_output
-@memory_.cache
-def _separate_w_1d(*, delay, dt_from, dt_to):
-    df = delay_to_df[delay]
-    s_w = df['w']
-    mask = _mask_1d(delay=delay, dt_from=dt_from, dt_to=dt_to)
-    if mask is not None:
-         s_w = s_w[mask]
-    return s_w.values
+    return (
+        df[[indicator_field]].values,
+        df[profit_field].values,
+        df['w'].values,
+    )
 
 
 # %%
@@ -97,7 +50,7 @@ from sklearn import ensemble
 CACHE = True
 
 
-def create_estimator_bins_1d(delay, radius=None):
+def create_estimator_bins_1d(delay: int, radius=None):
     if radius is None:
         radius = 0.10
 
@@ -139,8 +92,8 @@ def plot_model_1d(
 
 def plot_regressions_1d(
     *,
-    dt_from,
-    dt_to,
+    date_from,
+    date_to,
     indicator_field,
     profit_field,
     axes,
@@ -150,21 +103,23 @@ def plot_regressions_1d(
     y_ticks_interval_major: float | None = 0.2,
     ignore_ticker_weight: bool = False,
     radius=None,
+    use_validation_df: bool = False,
     **kwargs,
 ):
     delay_to_regression_bins_1d = train_1d(
-        dt_from=dt_from,
-        dt_to=dt_to,
+        date_from=date_from,
+        date_to=date_to,
         indicator_field=indicator_field,
         profit_field=profit_field,
         ignore_ticker_weight=ignore_ticker_weight,
         radius=radius,
+        use_validation_df=use_validation_df,
     )
 
     plot_1d(
         delay_to_regression_bins_1d,
-        dt_from=dt_from,
-        dt_to=dt_to,
+        date_from=date_from,
+        date_to=date_to,
         indicator_field=indicator_field,
         profit_field=profit_field,
         axes=axes,
@@ -178,20 +133,22 @@ def plot_regressions_1d(
 
 def train_1d(
     *,
-    dt_from,
-    dt_to,
+    date_from,
+    date_to,
     indicator_field,
     profit_field,
     ignore_ticker_weight: bool = False,
     radius=None,
+    use_validation_df: bool,
 ):
     delay_to_Xy_1d = {
         delay: separate_features_1d(
             delay=delay,
-            dt_from=dt_from,
-            dt_to=dt_to,
+            date_from=date_from,
+            date_to=date_to,
             indicator_field=indicator_field,
             profit_field=profit_field,
+            use_validation_df=use_validation_df,
         )
         for delay, df in delay_to_df.items()
     }
@@ -206,14 +163,14 @@ def train_1d(
         if ignore_ticker_weight:
             w = None
         reg_bin.fit(X, y, w)
-    
+
     return delay_to_regression_bins_1d
 
 
 def plot_1d(
     delay_to_regression_bins_1d,
-    dt_from,
-    dt_to,
+    date_from,
+    date_to,
     indicator_field,
     profit_field,
     axes,
@@ -223,9 +180,6 @@ def plot_1d(
     y_ticks_interval_major: float | None,
     **kwargs,
 ):
-    dt_from_str = str(dt_from.date()) if dt_from is not None else '***'
-    dt_to_str = str(dt_to.date()) if dt_to is not None else '***'
-
     for (num_days, reg_bin), ax in zip(
         delay_to_regression_bins_1d.items(), axes
     ):
@@ -237,16 +191,14 @@ def plot_1d(
             reg_bin,
             ax,
             style,
-            label=f'{dt_from_str} -- {dt_to_str}',
+            label=f'{format_date(date_from)} -- {format_date(date_to)}',
             relative=relative,
             **kwargs,
         )
 
         ax.grid(True, which='both')
         ax.grid(which='minor', alpha=0.25)
-        title = (
-            f'{indicator_field} -> {profit_field}  {num_days:<3} days'
-        )
+        title = f'{indicator_field} -> {profit_field}  {num_days:<3} days'
         if relative is not None:
             title += f', relative to {relative}'
         ax.set_title(title)
@@ -263,14 +215,15 @@ def plot_1d(
             )
 
 
-def plot_facet(
+def plot_facet_1d(
     *,
     indicator_field,
     profit_fields=(
-        'profit_in_currency', 
+        'profit_in_currency',
         # 'profit'
     ),
     figsize=(28, 8),
+    use_validation_df: bool = False,
     **kwargs,
 ) -> None:
     fig, axes = plt.subplots(
@@ -283,127 +236,144 @@ def plot_facet(
     )
 
     for i_profit_field, profit_field in enumerate(profit_fields):
-        current_axes = (
-            axes[i_profit_field] if len(profit_fields) > 1 else axes
-        )
-        for i_date_range, (dt_from, dt_to) in enumerate(DATE_RANGES):
+        current_axes = axes[i_profit_field] if len(profit_fields) > 1 else axes
+        for i_date_range, (date_from, date_to) in enumerate(
+            iterate_date_ranges(
+                append_empty_range=True, use_validation_df=use_validation_df
+            )
+        ):
+            if date_from is None:
+                assert date_to is None
+                kwargs_copy = {**kwargs, 'color': 'white', 'linewidth': 3}
+            else:
+                kwargs_copy = {**kwargs, 'num_color': i_date_range}
+
             plot_regressions_1d(
-                dt_from=dt_from,
-                dt_to=dt_to,
+                date_from=date_from,
+                date_to=date_to,
                 indicator_field=indicator_field,
                 profit_field=profit_field,
-                num_color=i_date_range,
                 axes=current_axes,
-                **kwargs,
+                use_validation_df=use_validation_df,
+                **kwargs_copy,
             )
 
-        plot_regressions_1d(
-            dt_from=None,
-            dt_to=None,
-            indicator_field=indicator_field,
-            profit_field=profit_field,
-            axes=current_axes,
-            linewidth=3,
-            color='white',
-            **kwargs,
-        )
     plt.show()
 
 
-# %%
-plot_facet(
-    indicator_field='indicator_4h',
-    # relative=0,
-)
+# %% [markdown]
+# Notice how in 7d profits, almost every year at the same values of
+# `dln_exp_4h` at ±0.05, average profit sharply drops.
+#
+# Suggesting, "too oversold" / "too overbouht" penalties are nicely
+# captured by indicator.
 
 # %%
-plot_facet(
-    indicator_field='ad_exp_4h',
-    # relative=0,
-)
-
-# %%
-plot_facet(
+plot_facet_1d(
     indicator_field='dln_exp_4h',
-    relative=+0.055,
     min_x=-0.15,
     max_x=+0.25,
     radius=0.02,
 )
 
 # %%
-plot_facet(
+plot_facet_1d(
     indicator_field='dln_exp_no_vol_4h',
-    # relative=0,
     min_x=-0.15,
     max_x=+0.25,
     radius=0.015,
 )
 
 # %%
-plot_facet(
+plot_facet_1d(
+    indicator_field='dln_exp_3d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.015,
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_3d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.01,
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_24d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.01,
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_24d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.006,
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_74d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.01,
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_74d',
+    figsize=(28, 10),
+    min_x=-0.15,
+    max_x=+0.25,
+    radius=0.01,
+)
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
+    indicator_field='indicator_4h',
+    # relative=0,
+)
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
+    indicator_field='ad_exp_4h',
+    # relative=0,
+)
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
     indicator_field='indicator_3d',
     relative=-0.5,
     figsize=(28, 10),
 )
 
-# %%
-plot_facet(
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
     indicator_field='ad_exp_3d',
     # relative=0,
     figsize=(28, 10),
 )
 
-# %%
-plot_facet(
-    indicator_field='dln_exp_3d',
-    relative=-0.05,
-    figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.015,
-)
-
-# %%
-plot_facet(
-    indicator_field='dln_exp_no_vol_3d',
-    relative=0.02,
-    figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
-)
-
-# %%
-plot_facet(
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
     indicator_field='indicator_24d',
     relative=+0.45,
     figsize=(28, 10),
 )
 
-# %%
-plot_facet(
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_1d(
     indicator_field='ad_exp_24d',
     # relative=0,
     figsize=(28, 10),
-)
-
-# %%
-plot_facet(
-    indicator_field='dln_exp_24d',
-    relative=-0.0075,
-    figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
-)
-
-# %%
-plot_facet(
-    indicator_field='dln_exp_no_vol_24d',
-    relative=-0.0075,
-    figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.006,
 )

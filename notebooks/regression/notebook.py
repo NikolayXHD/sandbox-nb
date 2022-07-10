@@ -30,7 +30,7 @@ from sklearn import model_selection
 
 from regression import cross_validation
 from regression import histogram
-from regression.load import build_df
+from regression.load import build_df, filter_df_by_dates
 
 PWD = Path(os.path.dirname(os.path.realpath('__file__')))
 CACHE_STORAGE_PATH = PWD.joinpath('..', '..', '.storage', 'cache')
@@ -52,7 +52,7 @@ delay_to_dir = {
         'moex',
         'dohodru',
         'rub',
-        '2015-07-01--2021-07-01',
+        '2015-07-01--2022-07-01',
         '_'.join(durations),
         'market_False',
         'profit_currency_USD',
@@ -73,17 +73,18 @@ delay_to_df_validate = {
     for delay, path in delay_to_dir.items()
 }
 
-DATE_RANGES = tuple(
+DATE_RANGES_VALIDATION = tuple(
     (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
     for y in range(2015, 2022)
 )
-delay_to_df = {}
-for delay, df in delay_to_df_validate.items():
-    delay_to_df[delay] = df.iloc[
-        : np.searchsorted(
-            df['t'], DATE_RANGES[-1][0].timestamp()
-        )
-    ]
+DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
+
+delay_to_df = {
+    delay: filter_df_by_dates(
+        df, None, DATE_RANGES[-1][1]
+    )
+    for delay, df in delay_to_df_validate.items()
+}
 
 time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
 
@@ -92,6 +93,36 @@ memory_ = Memory(
     mmap_mode='r',
     verbose=False,
 )
+
+
+def get_df(
+    *,
+    delay: int,
+    date_from: datetime | None,
+    date_to: datetime | None,
+    use_validation_df: bool = False,
+) -> pd.DataFrame:
+    delay_to_df_map = (
+        delay_to_df_validate if use_validation_df else delay_to_df
+    )
+    df = delay_to_df_map[delay]
+    df = filter_df_by_dates(df, date_from, date_to)
+    return df
+
+
+def iterate_date_ranges(
+    *, append_empty_range: bool = False, use_validation_df: bool = False,
+) -> typing.Iterable[typing.Tuple[datetime | None, datetime | None]]:
+    ranges = DATE_RANGES_VALIDATION if use_validation_df else DATE_RANGES
+    for r in ranges:
+        yield r
+    if append_empty_range:
+        yield (None, None)
+
+
+def format_date(d: datetime | None) -> str:
+    return str(d.date()) if d is not None else '***'
+
 
 # %%
 delay_to_df[180]

@@ -114,16 +114,15 @@ df_agg[(df_agg['t_day'] == 16618) & df_agg['n'] > 0]
 
 
 # %%
-def plot_ticker_distribution(dt_from, dt_to):
-    fig, ax = plt.subplots(figsize=(18, 6))
-    df = delay_to_df[180]
-    df = df[df['t'].between(dt_from.timestamp(), dt_to.timestamp())]
+def plot_ticker_distribution(date_from, date_to):
+    fig, ax = plt.subplots(figsize=(30, 6))
+    df = get_df(delay=180, date_from=date_from, date_to=date_to)
     val_counts = df['ticker'].value_counts()
     plt.bar(val_counts.index, val_counts.values)
     plt.xticks(rotation=90)
-    ax.set_title(f'{dt_from.date()} -- {dt_to.date()}')
+    ax.set_title(f'{format_date(date_from)} -- {format_date(date_to)}')
     plt.show()
 
 
-for dt_from, dt_to in DATE_RANGES:
-    plot_ticker_distribution(dt_from, dt_to)
+for date_from, date_to in iterate_date_ranges():
+    plot_ticker_distribution(date_from, date_to)

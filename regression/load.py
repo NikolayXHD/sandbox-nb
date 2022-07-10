@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pathlib import Path
 
 import numpy as np
@@ -16,7 +18,12 @@ def build_df(directory: Path, max_list_level: int) -> pd.DataFrame:
     directory = directory.resolve()
     print(directory)
 
-    level_subdirs = list(sorted(directory.glob(LEVEL_DIR_PATTERN)))
+    level_subdirs = list(
+        sorted(
+            level_dir for level_dir in directory.glob(LEVEL_DIR_PATTERN)
+            if _parse_level(level_dir) <= max_list_level
+        )
+    )
     tickers = list(
         sorted(
             _parse_ticker(f)
@@ -27,8 +34,6 @@ def build_df(directory: Path, max_list_level: int) -> pd.DataFrame:
 
     for level_dir in level_subdirs:
         level = _parse_level(level_dir)
-        if level > max_list_level:
-            continue
         files = sorted(level_dir.glob(FEATHER_FILE_PATTERN))
         for i, f in enumerate(files):
             if last_msg is not None:
@@ -114,4 +119,25 @@ def get_w(df: pd.DataFrame) -> pd.Series:
     )
 
 
-__all__ = ['build_df']
+def filter_df_by_dates(
+    df: pd.DataFrame, date_from: datetime | None, date_to: datetime | None
+) -> pd.DataFrame:
+    """
+    Assume time variable is sorted, binary search boundary indices, slice
+    by indices thus avoiding copy.
+
+    date_from: inclusive left boundary
+    date_to: exclusive right boundary
+    """
+    index_t_from = (
+        np.searchsorted(df['t'], date_from.timestamp(), side='right')
+        if date_from is not None else 0
+    )
+    index_t_to = (
+        np.searchsorted(df['t'], date_to.timestamp(), side='right')
+        if date_to is not None else len(df)
+    )
+    return df.iloc[index_t_from: index_t_to]
+
+
+__all__ = ['build_df', 'filter_df_by_dates']

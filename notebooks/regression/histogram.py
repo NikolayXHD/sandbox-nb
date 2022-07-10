@@ -15,6 +15,7 @@
 # %%
 import math
 
+from matplotlib import colors
 
 def plot_2d_hist(
     df_k,
@@ -27,134 +28,132 @@ def plot_2d_hist(
     bins=(400, 400),
     val_range=None,
     plot_values=False,
+    ignore_weight=False,
 ):
     ax.grid(False)
 
     hist, xbins, ybins, im = ax.hist2d(
         df_k[indicator_field],
         df_k[profit_field],
+        weights=None if ignore_weight else df_k['w'],
         bins=bins,
         range=val_range,
-        cmin=1,
+        cmin=1 if ignore_weight else df_k['w'].min(),
         cmap='Blues',
+        norm=colors.LogNorm(),
     )
-    
+
     if plot_values:
         x_delta = (xbins[-1] - xbins[0]) / len(xbins)
         y_delta = (ybins[-1] - ybins[0]) / len(ybins)
         for i in range(len(ybins) - 1):
             for j in range(len(xbins) - 1):
-                if hist[j,i] > 0:
+                if hist[j, i] > 0:
                     ax.text(
                         xbins[j] + x_delta / 2,
                         ybins[i] + y_delta / 2,
-                        format_integer(round_integer(hist[j,i], 0)),
+                        format_number(hist[j, i], 0),
                         color='w',
                         fontsize=14,
-                        bbox={'alpha': 0.25, 'facecolor': 'b'}
+                        bbox={'alpha': 0.25, 'facecolor': 'b'},
                         # fontweight="bold",
                     )
-    
+
     if plot_xlabel:
         ax.set_xlabel(indicator_field)
     if plot_ylabel:
         ax.set_ylabel(profit_field + ' ' + str(n_days))
-    ax.tick_params(axis='x',direction='in', pad=-12)
-    ax.tick_params(axis='y',direction='in', pad=-22)
+    ax.tick_params(axis='x', direction='in', pad=-12)
+    ax.tick_params(axis='y', direction='in', pad=-22)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
 
 
-def round_integer(value, n):
-    value_d = 10 ** math.floor(math.log10(value))
-    return int(round(value / value_d, n) * value_d)
+def format_number(value, n) -> str:
+    for num, qual in zip(
+        (10**(3 * i) for i in range(4, -5, -1)),
+        ('T', 'G', 'M', 'K', '', 'm', 'μ', 'n', 'p')
+    ):
+        if value >= num:
+            return f'{int(round(value / num, n))}{qual}'
+    return str(value)
 
 
-def format_integer(value) -> str:
-    result = str(value) + '\0'
-    result = result.replace('000000000000\0', 'T')
-    result = result.replace('000000000\0', 'G')
-    result = result.replace('000000\0', 'M')
-    result = result.replace('000\0', 'K')
-    result = result.replace('\0', '')
-    return result
-
+# %% [markdown]
+# ## Demonstrate ignore_weight difference
 
 # %%
-field_x = 'dln_exp_3d'
-field_y = 'dln_exp_no_vol_24d'
+fig, axes = plt.subplots(figsize=(20, 10), ncols=2)
 
-fig, ax = plt.subplots(figsize=(15, 15))
-for j, field in enumerate(fields):
+for i, ignore_weight in enumerate((True, False)):
     plot_2d_hist(
-        delay_to_df[num_days],
-        num_days,
-        field_x,
-        field_y,
-        ax=ax,
-        bins=(8, 6),
-        val_range=((-0.1, +0.1), (-0.030, +0.030)),
+        delay_to_df[7],
+        7,
+        'dln_exp_3d',
+        'dln_exp_no_vol_24d',
+        ax=axes[i],
+        bins=(8, 8),
+        val_range=((-0.1, +0.1), (-0.04, +0.04)),
         plot_values=True,
+        ignore_weight=ignore_weight,
     )
 plt.show()
 
 # %%
-fields = ('dln_exp_4h', 'dln_exp_no_vol_4h')
-
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
-
+fig, ax = plt.subplots(figsize=(10, 10))
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln_exp_24d',
+    'dln_exp_no_vol_24d',
+    ax=ax,
+    bins=(8, 6),
+    val_range=((-0.1, +0.1), (-0.030, +0.030)),
+    plot_values=True,
+)
 plt.show()
 
 # %%
-fields = ('dln_exp_3d', 'dln_exp_no_vol_3d')
-
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
-
+fig, ax = plt.subplots(figsize=(10, 10))
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln_exp_3d',
+    'dln_exp_no_vol_72d',
+    ax=ax,
+    bins=(8, 9),
+    val_range=((-0.1, +0.1), (-0.0125, +0.010)),
+    plot_values=True,
+)
 plt.show()
 
 # %%
-fields = ('dln_exp_24d', 'dln_exp_no_vol_24d')
+field_grps = [
+    (f'dln_exp_{duration}', f'dln_exp_no_vol_{duration}')
+    for duration in durations
+]
+profit_field = 'profit_in_currency'
 
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
+fig, axes = plt.subplots(
+    figsize=(15 * len(field_grps[0]), 5 * len(delay_to_df) * len(field_grps)),
+    nrows=len(delay_to_df) * len(field_grps),
+    ncols=len(field_grps[0]),
+)
+plt.subplots_adjust(wspace=0.01, hspace=0.08)
 
 for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
+    for j, fields in enumerate(field_grps):
+        for k, field in enumerate(fields):
+            row = j * len(delay_to_df) + i
+            plot_2d_hist(
+                delay_to_df[num_days],
+                num_days,
+                field,
+                profit_field,
+                ax=axes[row, k],
+                plot_ylabel=k > 0,
+                bins=(400, 200),
+            )
 
 plt.show()
 
@@ -222,6 +221,7 @@ plt.show()
 # %%
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
+
 
 def plot_histograms(*, indicator_field: str, profit_field: str) -> None:
     delay_to_Xy_1d = {
