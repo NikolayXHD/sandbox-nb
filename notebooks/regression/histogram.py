@@ -80,6 +80,35 @@ def format_number(value, n) -> str:
     return str(value)
 
 
+# %%
+for delay, df in delay_to_df.items():
+    df['dln_exp_log_3d'] = log_scale_value(df['dln_exp_3d'], 2000)
+    df['dln_exp_no_vol_log_24d'] = log_scale_value(df['dln_exp_no_vol_24d'], 2000)
+
+fig, axes = plt.subplots(figsize=(20, 10), ncols=2)
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln_exp_log_3d',
+    'dln_exp_3d',    
+    ax=axes[0],
+    bins=(100, 100),
+    plot_values=False,
+    log_color_scale=False,
+)
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln_exp_no_vol_log_24d',
+    'dln_exp_no_vol_24d',
+    ax=axes[1],
+    bins=(100, 100),
+    plot_values=False,
+    log_color_scale=False,
+)
+
+plt.show()
+
 # %% [markdown]
 # ## Demonstrate ignore_weight difference
 
