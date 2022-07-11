@@ -13,6 +13,7 @@
 # ---
 
 # %%
+from collections import defaultdict
 import typing
 
 import numpy as np
@@ -21,16 +22,43 @@ import pandas as pd
 
 def sim(
     get_score: typing.Callable[[pd.DataFrame], np.array],
+    *,
     profit_fld: str = 'profit_in_currency',
     use_validation_df: bool = False,
+    title: str | None = None,
 ) -> None:
-    for delay in delay_to_df.keys():
-        print(delay)
-        for date_from, date_to in iterate_date_ranges(
-            append_empty_range=True, use_validation_df=use_validation_df
-        ):
-            print(f'    {format_date(date_from)} -- {format_date(date_to)}')
+    col_to_lines = defaultdict(list)
 
+    print_column('', 0, col_to_lines)
+    print_column(title or '', 0, col_to_lines)
+    print_column('------------------------', 0, col_to_lines)
+    
+    for date_from, date_to in iterate_date_ranges(
+        append_empty_range=True, use_validation_df=use_validation_df
+    ):
+        if date_from is None:
+            print_column('------------------------', 0, col_to_lines)
+        print_column(
+            f'{format_date(date_from)} -- {format_date(date_to)}',
+            0,
+            col_to_lines,
+        )
+
+    print_column('', 1, col_to_lines)
+    print_column(f'freq', 1, col_to_lines)
+    print_column('-----', 1, col_to_lines)    
+
+    for column_ix, delay in enumerate(delay_to_df.keys()):
+        print_column(str(delay), 2 + column_ix, col_to_lines)
+        # print_column('~w/rnd ~w     +w/rnd  +w    ', 2 + column_ix, col_to_lines)
+        # print_column('--------------------------', 2 + column_ix, col_to_lines)
+        print_column('+w/rnd  +w    ', 2 + column_ix, col_to_lines)
+        print_column('------------', 2 + column_ix, col_to_lines)
+
+    for date_from, date_to in iterate_date_ranges(
+        append_empty_range=True, use_validation_df=use_validation_df
+    ):
+        for column_ix, delay in enumerate(delay_to_df.keys()):
             df = get_df(
                 delay=delay,
                 date_from=date_from,
@@ -40,22 +68,57 @@ def sim(
 
             score = get_score(df)
 
-            positive_average = np.average(df[profit_fld].values, weights=score)
-            positive_average_w = np.average(
-                df[profit_fld].values, weights=score * df['w']
-            )
-            neutral_average = np.average(df[profit_fld].values)
+            # try:
+            #     positive_average = np.average(df[profit_fld].values, weights=score)
+            # except ZeroDivisionError:
+            #     positive_average = np.nan
+
+            try:
+                positive_average_w = np.average(
+                    df[profit_fld].values, weights=score * df['w']
+                )
+            except ZeroDivisionError:
+                positive_average_w = np.nan
+
+            # neutral_average = np.average(df[profit_fld].values)
             neutral_average_w = np.average(df[profit_fld].values, weights=df['w'])
 
-            print('            ~w     w      freq')
-            print(
-                f'    score:  {positive_average:+4_.2f}  {positive_average_w:+4_.2f}  '
-                f'{(score > 0).sum() / len(df):.4f}'
+            if column_ix == 0:
+                if date_from is None:
+                    print_column('----', 1 + column_ix, col_to_lines)
+                print_column(f'{(score > 0).sum() / len(df):.4f}', 1 + column_ix, col_to_lines)
+
+            if date_from is None:
+                print_column('------------', 2 + column_ix, col_to_lines)
+            print_column(
+                (
+                    # f'{neutral_average:+4_.2f}  {positive_average:+4_.2f}  '
+                    f'{neutral_average_w:+4_.2f}  {positive_average_w:+4_.2f}'
+                ),
+                2 + column_ix,
+                col_to_lines,
             )
-            print(
-                f'      all:  {neutral_average:+4_.2f}  {neutral_average_w:+4_.2f}'
-            )
-            print()
+
+    i_to_width = {
+        i: max(len(l) for l in lines) for i, lines in col_to_lines.items()
+    }
+    num_lines = max(len(lines) for lines in col_to_lines.values())
+    text = '\n'.join(
+        ' | '.join(
+            (
+                col_to_lines[column_ix][line_ix]
+                if line_ix < len(col_to_lines[column_ix])
+                else ''
+            ).ljust(i_to_width[column_ix])
+            for column_ix in range(len(col_to_lines))
+        )
+        for line_ix in range(num_lines)
+    )
+    print(text)
+
+
+def print_column(txt: str, i: int, col_to_lines) -> None:
+    col_to_lines[i].append(txt)    
 
 
 # %% jupyter={"outputs_hidden": true} tags=[]
