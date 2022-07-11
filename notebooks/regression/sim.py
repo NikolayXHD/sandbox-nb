@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -52,7 +52,7 @@ def sim(
         print_column(str(delay), 2 + column_ix, col_to_lines)
         # print_column('~w/rnd ~w     +w/rnd  +w    ', 2 + column_ix, col_to_lines)
         # print_column('--------------------------', 2 + column_ix, col_to_lines)
-        print_column('+w/rnd  +w    ', 2 + column_ix, col_to_lines)
+        print_column('+w/rnd  +w  ', 2 + column_ix, col_to_lines)
         print_column('------------', 2 + column_ix, col_to_lines)
 
     for date_from, date_to in iterate_date_ranges(
@@ -121,96 +121,75 @@ def print_column(txt: str, i: int, col_to_lines) -> None:
     col_to_lines[i].append(txt)    
 
 
+# %% [markdown]
+# ## Validate high profit indicator ranges on 2022 stock history
+#
+# it confidently repeats
+
 # %% jupyter={"outputs_hidden": true} tags=[]
-def _get_score(df: pd.DataFrame) -> np.array:
-    indicator_1_fld = 'dln_exp_3d'
-    indicator_2_fld = 'dln_exp_no_vol_24d'
+for min_val, max_val in (
+    (-0.30, 0.15),
+    (-0.30, 0.25),
+    (-0.40, 0.30),
+    (-0.45, 0.45),
+):
+    def _get_score(df: pd.DataFrame) -> np.array:
+        x = df['dln_exp_no_vol_log_3d']
+        y = df['dln_exp_no_vol_log_24d']
+        slope_bin = 0.5 / 8  #
+        bin_x = 0.2
+        bin_y = 0.2
+        min_x = -0.8
+        score = (
+            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
+            * x.between(-0.50, 0.50).astype('int')
+        )
+        return score
 
-    slope_bin = 4 / 8
-    bin_x = 0.025
-    bin_y = 0.01
-    min_x = -0.1
-    min_y = -0.03 + bin_y * 0.85
+    sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}', use_validation_df=True)
+    print()
 
-    x = df[indicator_1_fld]
-    y = df[indicator_2_fld]
-    score = np.maximum(
-        0, slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y
-    )
-    return score
+# %% [markdown]
+# ## Consecutive narrowing down of long indicator range `dln_exp_no_vol_log_24d`
+#
+# ```
+# frequency       | 180d  30d   7d    |
+# ----------------+-------------------+
+# 0.16            | +0.37 +0.30 +0.22 |
+# 0.05            | +0.75 +0.53 +0.40 |
+# 0.016           | +1.51 +0.88 +0.56 |
+# 0.006           | +2.21 +1.31 +0.57 |
+# ----------------+-------------------+
+# ```
 
-sim(_get_score, use_validation_df=True)
+# %% tags=[]
+for min_val, max_val in (
+    (-0.30, 0.15),
+    (-0.30, 0.25),
+    (-0.40, 0.30),
+    (-0.45, 0.45),
+):
+    def _get_score(df: pd.DataFrame) -> np.array:
+        x = df['dln_exp_no_vol_log_3d']
+        y = df['dln_exp_no_vol_log_24d']
+        slope_bin = 0.5 / 8  #
+        bin_x = 0.2
+        bin_y = 0.2
+        min_x = -0.8
+        score = (
+            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
+            * x.between(-0.50, 0.50).astype('int')
+        )
+        return score
 
-
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_no_vol_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 0.5 / 8  #
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.8
-    score = (
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.45, 0.45)
-        * x.between(-0.50, 0.50).astype('int')
-    )
-    return score
-
-sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
-
-
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_no_vol_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 0.5 / 8  #
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.8
-    score = (
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.40, 0.30)
-        * x.between(-0.50, 0.50).astype('int')
-    )
-    return score
-
-sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
-
-
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_no_vol_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 0.5 / 8  #
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.8
-    score = (
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.25)
-        * x.between(-0.50, 0.50).astype('int')
-    )
-    return score
-
-sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
+    sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+    print()
 
 
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_no_vol_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 0.5 / 8
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.8
-    score = (
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.15)
-        * x.between(-0.50, 0.50).astype('int')
-    )
-    return score
+# %% [markdown]
+# ## Slice short indicator `dln_exp_no_vol_log_3d`
 
-sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
-
-
-# %%
+# %% tags=[]
 def sim_ranges(val_min, val_max, step):
     for val in np.arange(val_min, val_max, step):
         def _get_score(df: pd.DataFrame) -> np.array:
@@ -229,10 +208,17 @@ def sim_ranges(val_min, val_max, step):
         sim(_get_score, title=f'{val:.2f} -- {val + step:.2f}')
         print()
 
-sim_ranges(-0.8, 0.8, 0.1)
+sim_ranges(-0.8, 0.8, 0.1) 
 
 
-# %%
+# %% [markdown]
+# ## Maximal 180d profit
+#
+# since extreme values of long indicator have high 180d income and low / negative 7d, 30d incomes,
+#
+# maximal 180d income is achieved at 4 corners
+
+# %% tags=[]
 def _get_score(df: pd.DataFrame) -> np.array:
     x = df['dln_exp_no_vol_log_3d']
     y = df['dln_exp_no_vol_log_24d']
@@ -240,63 +226,95 @@ def _get_score(df: pd.DataFrame) -> np.array:
     bin_x = 0.2
     bin_y = 0.2
     min_x = -0.8
-    score =(
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.40, 1)
-        # ~y.between(-0.30, 0.35)
-        & x.between(-0.50, 0.50)
+    score = (
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.15)
+        &
+        ~x.between(-0.25, 0.50).astype('int')
     )
     return score
 
-sim(_get_score)
+
+sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
 
 
 # %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_no_vol_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 1 / 8
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.8
-    min_y = +0.25
-    score =(
-        ((y - min_y) / bin_y > slope_bin * (x - min_x) / bin_x)
-        & x.between(-0.5, 0.5)
-    )
-    return score
 
-sim(_get_score)
+# %% [markdown]
+# ## Slice long indicator `dln_exp_no_vol_log_24d`
 
+# %% jupyter={"outputs_hidden": true} tags=[]
+def sim_ranges(val_min, val_max, step):
+    for val in np.arange(val_min, val_max, step):
+        def _get_score(df: pd.DataFrame) -> np.array:
+            x = df['dln_exp_no_vol_log_3d']
+            y = df['dln_exp_no_vol_log_24d']
+            slope_bin = 0.5 / 8
+            bin_x = 0.2
+            bin_y = 0.2
+            min_x = -0.8
+            score =(
+                ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.3, 0.2)
+                & x.between(val, val + step)
+            )
+            return score
+        sim(_get_score, title=f'{val:.2f} -- {val + step:.2f}')
+        print()
 
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 1 / 5
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.5
-    min_y = 0.15
-    score = slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y < 0
-    return score
-
-sim(_get_score)
+sim_ranges(-0.9, 0.9, 0.1)
 
 
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_log_3d']
-    y = df['dln_exp_no_vol_log_24d']
-    slope_bin = 1 / 5
-    bin_x = 0.2
-    bin_y = 0.2
-    min_x = -0.5
-    min_y = -0.4
-    score = slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y > 0
-    return score
+# %% [markdown]
+# ## dln_exp_no_vol_log_72d
+#
+# higher frequency of high 30d profit
+#
+# ```
+# frequency       | 180d  30d   7d    |
+# ----------------+-------------------+
+# 0.13            | +0.32 +0.47 +0.30 |
+# 0.045           | +0.46 +0.72 +0.44 |
+# 0.02            | +0.53 +0.92 +0.49 |
+# ----------------+-------------------+
+# ```
 
-sim(_get_score)
+# %% tags=[]
+def sim_ranges(min_val, max_val):
+    def _get_score(df: pd.DataFrame) -> np.array:
+        x = df['dln_exp_no_vol_log_3d']
+        y = df['dln_exp_no_vol_log_72d']
+        slope_bin = 0.25 / 8
+        bin_x = 0.2
+        bin_y = 0.2
+        min_x = -0.8
+        score = (
+            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
+            & x.between(-1, 0.50)
+        )
+        return score
 
+    sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+
+for min_val, max_val in (
+    (-0.30, +0.35),
+    (-0.40, +0.40),
+    (-0.45, +0.45),
+):
+    sim_ranges(min_val, max_val)
+    print()
+
+
+# %% [markdown]
+# ## Example of treating desirability (score) as probability (weight) multiplier
+#
+# Since we buy more stock with hihger score, it's logical these stocks will have bigger impact on profits.
+#
+# However, simply multiplying existing "probablity" weight by "desirability" score, ignores the practical limitation.
+#
+# When the day comes and extreme score is observed, our possibilities to buy more are limited by our total porfolio value.
+#
+# We cannot borrow money from the past (time machine needed), nor we want to borrow from the future (we hate banks).
+#
+# Therefore relative desirability can only rebalance weights between the stocks available at the same time. (Not implemented yet)
 
 # %% tags=[] jupyter={"outputs_hidden": true}
 def _get_score(df: pd.DataFrame) -> np.array:
@@ -307,48 +325,6 @@ def _get_score(df: pd.DataFrame) -> np.array:
     bin_y = 0.01
     min_x = -0.1
     min_y = -0.03 + bin_y * 0.85
-    score = np.maximum(
-        0, slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y
-    )
-    return score
-
-sim(_get_score)
-
-
-# %%
-def _get_score(df: pd.DataFrame) -> np.array:
-    x = df['dln_exp_3d']
-    y = df['dln_exp_no_vol_24d']
-    return (
-        x.between(-0.07, +0.05).astype('int') *
-        np.maximum(0, ((x / 0.01) ** 2 + (y / (0.0025)) ** 2) ** 0.5 - 1.5)
-    )
-sim(_get_score)
-
-
-# %% jupyter={"outputs_hidden": true} tags=[]
-def _get_score(df: pd.DataFrame) -> np.array:
-    return (
-        df['dln_exp_4h'].between(-1, +1)
-        & df['dln_exp_no_vol_24d'].between(-1, -0.008)
-    ).astype('int')
-
-sim(_get_score)
-
-
-# %% jupyter={"outputs_hidden": true} tags=[]
-def _get_score(df: pd.DataFrame) -> np.array:
-    indicator_1_fld = 'dln_exp_24d'
-    indicator_2_fld = 'dln_exp_no_vol_24d'
-
-    slope_bin = 0
-    bin_x = 0.025
-    bin_y = 0.01
-    min_x = -0.1
-    min_y = -0.03 + bin_y * 2.5
-
-    x = df[indicator_1_fld]
-    y = df[indicator_2_fld]
     score = np.maximum(
         0, slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y
     )
