@@ -157,96 +157,66 @@ plot_2d_hist(
 )
 plt.show()
 
-# %%
-field_grps = [
-    (f'dln_exp_{duration}', f'dln_exp_no_vol_{duration}')
-    for duration in durations
-]
-profit_field = 'profit_in_currency'
 
-fig, axes = plt.subplots(
-    figsize=(15 * len(field_grps[0]), 5 * len(delay_to_df) * len(field_grps)),
-    nrows=len(delay_to_df) * len(field_grps),
-    ncols=len(field_grps[0]),
+# %%
+def plot_histogram_pairs(field_grps):
+    profit_field = 'profit_in_currency'
+
+    fig, axes = plt.subplots(
+        figsize=(15 * len(field_grps[0]), 5 * len(delay_to_df) * len(field_grps)),
+        nrows=len(delay_to_df) * len(field_grps),
+        ncols=len(field_grps[0]),
+    )
+    plt.subplots_adjust(wspace=0.01, hspace=0.08)
+
+    for i, num_days in enumerate(delay_to_df.keys()):
+        for j, fields in enumerate(field_grps):
+            for k, field in enumerate(fields):
+                row = j * len(delay_to_df) + i
+                plot_2d_hist(
+                    delay_to_df[num_days],
+                    num_days,
+                    field,
+                    profit_field,
+                    ax=axes[row, k],
+                    plot_ylabel=k > 0,
+                    bins=(400, 200),
+                )
+
+    plt.show()
+
+
+# %%
+plot_histogram_pairs(
+    [
+        (f'dln_exp_log_{duration}', f'dln_exp_no_vol_log_{duration}')
+        for duration in durations
+    ]
 )
-plt.subplots_adjust(wspace=0.01, hspace=0.08)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, fields in enumerate(field_grps):
-        for k, field in enumerate(fields):
-            row = j * len(delay_to_df) + i
-            plot_2d_hist(
-                delay_to_df[num_days],
-                num_days,
-                field,
-                profit_field,
-                ax=axes[row, k],
-                plot_ylabel=k > 0,
-                bins=(400, 200),
-            )
-
-plt.show()
 
 # %%
-fields = ('indicator_4h', 'ad_exp_4h')
-
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
-
-plt.show()
+plot_histogram_pairs(
+    [
+        (f'dln_exp_{duration}', f'dln_exp_no_vol_{duration}')
+        for duration in durations
+    ]
+)
 
 # %%
-fields = ('indicator_3d', 'ad_exp_3d')
-
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
-
-plt.show()
+plot_histogram_pairs(
+    [
+        (f'indicator_log_{duration}', f'ad_exp_log_{duration}')
+        for duration in durations
+    ]
+)
 
 # %%
-fields = ('indicator_24d', 'ad_exp_24d')
-
-fig, axes = plt.subplots(figsize=(30, 15), nrows=3, ncols=2)
-plt.subplots_adjust(wspace=0.01, hspace=0.03)
-
-for i, num_days in enumerate(delay_to_df.keys()):
-    for j, field in enumerate(fields):
-        plot_2d_hist(
-            delay_to_df[num_days],
-            num_days,
-            field,
-            'profit_in_currency',
-            ax=axes[i, j],
-            plot_xlabel=i == len(delay_to_df) - 1,
-            plot_ylabel=j == 0,
-        )
-
-plt.show()
-
+plot_histogram_pairs(
+    [
+        (f'indicator_{duration}', f'ad_exp_{duration}')
+        for duration in durations
+    ]
+)
 
 # %%
 # # %%timeit -n1 -r1
