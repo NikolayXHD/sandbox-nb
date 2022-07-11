@@ -29,6 +29,7 @@ def plot_2d_hist(
     val_range=None,
     plot_values=False,
     ignore_weight=False,
+    log_color_scale=True,
 ):
     ax.grid(False)
 
@@ -40,7 +41,7 @@ def plot_2d_hist(
         range=val_range,
         cmin=1 if ignore_weight else df_k['w'].min(),
         cmap='Blues',
-        norm=colors.LogNorm(),
+        norm=colors.LogNorm() if log_color_scale else None,
     )
 
     if plot_values:
