@@ -50,15 +50,21 @@ from sklearn import ensemble
 CACHE = True
 
 
-def create_estimator_bins_1d(delay: int, radius=None):
+def create_estimator_bins_1d(
+    delay: int,
+    radius=None,
+    regression_bins: typing.Tuple[int, int] | None = None,
+):
     if radius is None:
         radius = 0.10
+    if regression_bins is None:
+        regression_bins = (40, 1)
 
     def _w(d):
         return norm.pdf(d / radius)
 
     return histogram.Histogram2dRegressionWrapper(
-        bins=(40, 1),
+        bins=regression_bins,
         shuffle=False,
         memory_=memory_,
         verbose=False,
@@ -104,6 +110,7 @@ def plot_regressions_1d(
     ignore_ticker_weight: bool = False,
     radius=None,
     use_validation_df: bool = False,
+    regression_bins: typing.Tuple[int, int] | None = None,
     **kwargs,
 ):
     delay_to_regression_bins_1d = train_1d(
@@ -113,6 +120,7 @@ def plot_regressions_1d(
         profit_field=profit_field,
         ignore_ticker_weight=ignore_ticker_weight,
         radius=radius,
+        regression_bins=regression_bins,
         use_validation_df=use_validation_df,
     )
 
@@ -139,6 +147,7 @@ def train_1d(
     profit_field,
     ignore_ticker_weight: bool = False,
     radius=None,
+    regression_bins: typing.Tuple[int, int] | None = None,
     use_validation_df: bool,
 ):
     delay_to_Xy_1d = {
@@ -154,7 +163,11 @@ def train_1d(
     }
 
     delay_to_regression_bins_1d = {
-        delay: create_estimator_bins_1d(delay, radius)
+        delay: create_estimator_bins_1d(
+            delay=delay,
+            radius=radius,
+            regression_bins=regression_bins,
+        )
         for delay in delay_to_Xy_1d.keys()
     }
 
@@ -223,6 +236,7 @@ def plot_facet_1d(
         # 'profit'
     ),
     figsize=(28, 8),
+    regression_bins: typing.Tuple[int, int | None] = None,
     use_validation_df: bool = False,
     **kwargs,
 ) -> None:
@@ -254,12 +268,157 @@ def plot_facet_1d(
                 indicator_field=indicator_field,
                 profit_field=profit_field,
                 axes=current_axes,
+                regression_bins=regression_bins,
                 use_validation_df=use_validation_df,
                 **kwargs_copy,
             )
 
     plt.show()
 
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_log_4h',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_log_4h',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_log_3d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_log_3d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_log_24d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_log_24d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_log_72d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_no_vol_log_72d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='indicator_log_4h',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='ad_exp_log_4h',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='indicator_log_3d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='ad_exp_log_3d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='indicator_log_24d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='ad_exp_log_24d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='indicator_log_72d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='ad_exp_log_72d',
+    min_x=-0.75,
+    max_x=+0.75,
+    radius=0.05,
+    regression_bins=(100, 1),
+)
 
 # %% [markdown]
 # Notice how in 7d profits, almost every year at the same values of
@@ -271,71 +430,89 @@ def plot_facet_1d(
 # %%
 plot_facet_1d(
     indicator_field='dln_exp_4h',
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.02,
+    min_x=-0.11,
+    max_x=+0.11,
+    radius=0.004,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
     indicator_field='dln_exp_no_vol_4h',
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.015,
+    min_x=-0.11,
+    max_x=+0.11,
+    radius=0.004,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
     indicator_field='dln_exp_3d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.015,
+    min_x=-0.09,
+    max_x=+0.09,
+    radius=0.003,
+    regression_bins=(500, 1),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='dln_exp_3d',
+    figsize=(28, 10),
+    min_x=-0.11,
+    max_x=+0.11,
+    radius=0.006,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
     indicator_field='dln_exp_no_vol_3d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
+    min_x=-0.11,
+    max_x=+0.11,
+    radius=0.004,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
     indicator_field='dln_exp_24d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
+    min_x=-0.11,
+    max_x=+0.11,
+    radius=0.004,
+    regression_bins=(120, 1),
 )
 
-# %%
+# %% tags=[]
 plot_facet_1d(
     indicator_field='dln_exp_no_vol_24d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.006,
+    min_x=-0.03,
+    max_x=+0.03,
+    radius=0.004,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
-    indicator_field='dln_exp_74d',
+    indicator_field='dln_exp_72d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
+    min_x=-0.04,
+    max_x=+0.04,
+    radius=0.002,
+    regression_bins=(120, 1),
 )
 
 # %%
 plot_facet_1d(
-    indicator_field='dln_exp_no_vol_74d',
+    indicator_field='dln_exp_no_vol_72d',
     figsize=(28, 10),
-    min_x=-0.15,
-    max_x=+0.25,
-    radius=0.01,
+    min_x=-0.03,
+    max_x=+0.03,
+    radius=0.002,
+    regression_bins=(250, 1),
 )
 
 # %% jupyter={"outputs_hidden": true} tags=[]
