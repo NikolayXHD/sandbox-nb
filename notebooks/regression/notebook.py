@@ -65,11 +65,31 @@ delay_to_dir = {
     for delay in (7, 30, 180)
 }
 
+
+def log_scale_value(values: np.array, scale: float) -> np.array:
+    return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
+
+
+def append_log_indicators(df):
+    return df.assign(
+        **{
+            f'{indicator}_log_{duration}': log_scale_value(
+                df[f'{indicator}_{duration}'], 10**4
+            )
+            for duration in durations
+            for indicator in ('indicator', 'ad_exp', 'dln_exp', 'dln_exp_no_vol')
+            if f'{indicator}_{duration}' in df
+        }
+    )
+
+
 # Full dataset, including most recent year.
 # Never use it to find regularities in data, rather use it to
 # validate the findings
 delay_to_df_validate = {
-    delay: build_df(path, max_list_level=2)
+    delay: append_log_indicators(
+        build_df(path, max_list_level=2)
+    )
     for delay, path in delay_to_dir.items()
 }
 
