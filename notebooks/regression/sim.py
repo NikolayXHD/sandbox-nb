@@ -142,24 +142,187 @@ def _get_score(df: pd.DataFrame) -> np.array:
 sim(_get_score, use_validation_df=True)
 
 
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 0.5 / 8  #
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    score = (
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.45, 0.45)
+        * x.between(-0.50, 0.50).astype('int')
+    )
+    return score
+
+sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 0.5 / 8  #
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    score = (
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.40, 0.30)
+        * x.between(-0.50, 0.50).astype('int')
+    )
+    return score
+
+sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 0.5 / 8  #
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    score = (
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.25)
+        * x.between(-0.50, 0.50).astype('int')
+    )
+    return score
+
+sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 0.5 / 8
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    score = (
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.15)
+        * x.between(-0.50, 0.50).astype('int')
+    )
+    return score
+
+sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
+
+
+# %%
+def sim_ranges(val_min, val_max, step):
+    for val in np.arange(val_min, val_max, step):
+        def _get_score(df: pd.DataFrame) -> np.array:
+            x = df['dln_exp_no_vol_log_3d']
+            y = df['dln_exp_no_vol_log_24d']
+            slope_bin = 0.5 / 8
+            bin_x = 0.2
+            bin_y = 0.2
+            min_x = -0.8
+            score =(
+                (y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(val, val + step)
+                # ~y.between(-0.30, 0.30)
+                & x.between(-0.50, 0.50)
+            )
+            return score
+        sim(_get_score, title=f'{val:.2f} -- {val + step:.2f}')
+        print()
+
+sim_ranges(-0.8, 0.8, 0.1)
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 0.5 / 8
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    score =(
+        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.40, 1)
+        # ~y.between(-0.30, 0.35)
+        & x.between(-0.50, 0.50)
+    )
+    return score
+
+sim(_get_score)
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_no_vol_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 1 / 8
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.8
+    min_y = +0.25
+    score =(
+        ((y - min_y) / bin_y > slope_bin * (x - min_x) / bin_x)
+        & x.between(-0.5, 0.5)
+    )
+    return score
+
+sim(_get_score)
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 1 / 5
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.5
+    min_y = 0.15
+    score = slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y < 0
+    return score
+
+sim(_get_score)
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_log_3d']
+    y = df['dln_exp_no_vol_log_24d']
+    slope_bin = 1 / 5
+    bin_x = 0.2
+    bin_y = 0.2
+    min_x = -0.5
+    min_y = -0.4
+    score = slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y > 0
+    return score
+
+sim(_get_score)
+
+
 # %% tags=[] jupyter={"outputs_hidden": true}
 def _get_score(df: pd.DataFrame) -> np.array:
-    indicator_1_fld = 'dln_exp_3d'
-    indicator_2_fld = 'dln_exp_no_vol_24d'
-
+    x = df['dln_exp_3d']
+    y = df['dln_exp_no_vol_24d']
     slope_bin = 4 / 8
     bin_x = 0.025
     bin_y = 0.01
     min_x = -0.1
     min_y = -0.03 + bin_y * 0.85
-
-    x = df[indicator_1_fld]
-    y = df[indicator_2_fld]
     score = np.maximum(
         0, slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y
     )
     return score
 
+sim(_get_score)
+
+
+# %%
+def _get_score(df: pd.DataFrame) -> np.array:
+    x = df['dln_exp_3d']
+    y = df['dln_exp_no_vol_24d']
+    return (
+        x.between(-0.07, +0.05).astype('int') *
+        np.maximum(0, ((x / 0.01) ** 2 + (y / (0.0025)) ** 2) ** 0.5 - 1.5)
+    )
 sim(_get_score)
 
 
