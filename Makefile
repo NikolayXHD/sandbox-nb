@@ -41,6 +41,11 @@ env-create:
 env-update:
 	mamba env update -p ./envs -f environment.yml
 
+env-remove:
+	mamba env remove -p ./envs
+
+env-delete: env-remove
+
 
 SHELL := /usr/bin/bash
 
