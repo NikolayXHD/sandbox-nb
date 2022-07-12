@@ -20,7 +20,8 @@ def build_df(directory: Path, max_list_level: int) -> pd.DataFrame:
 
     level_subdirs = list(
         sorted(
-            level_dir for level_dir in directory.glob(LEVEL_DIR_PATTERN)
+            level_dir
+            for level_dir in directory.glob(LEVEL_DIR_PATTERN)
             if _parse_level(level_dir) <= max_list_level
         )
     )
@@ -131,13 +132,15 @@ def filter_df_by_dates(
     """
     index_t_from = (
         np.searchsorted(df['t'], date_from.timestamp(), side='right')
-        if date_from is not None else 0
+        if date_from is not None
+        else 0
     )
     index_t_to = (
         np.searchsorted(df['t'], date_to.timestamp(), side='right')
-        if date_to is not None else len(df)
+        if date_to is not None
+        else len(df)
     )
-    return df.iloc[index_t_from: index_t_to]
+    return df.iloc[index_t_from:index_t_to]
 
 
 __all__ = ['build_df', 'filter_df_by_dates']

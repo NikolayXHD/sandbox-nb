@@ -32,7 +32,7 @@ def sim(
     print_column('', 0, col_to_lines)
     print_column(title or '', 0, col_to_lines)
     print_column('------------------------', 0, col_to_lines)
-    
+
     for date_from, date_to in iterate_date_ranges(
         append_empty_range=True, use_validation_df=use_validation_df
     ):
@@ -46,7 +46,7 @@ def sim(
 
     print_column('', 1, col_to_lines)
     print_column(f'freq', 1, col_to_lines)
-    print_column('-----', 1, col_to_lines)    
+    print_column('-----', 1, col_to_lines)
 
     for column_ix, delay in enumerate(delay_to_df.keys()):
         print_column(str(delay), 2 + column_ix, col_to_lines)
@@ -81,12 +81,18 @@ def sim(
                 positive_average_w = np.nan
 
             # neutral_average = np.average(df[profit_fld].values)
-            neutral_average_w = np.average(df[profit_fld].values, weights=df['w'])
+            neutral_average_w = np.average(
+                df[profit_fld].values, weights=df['w']
+            )
 
             if column_ix == 0:
                 if date_from is None:
                     print_column('----', 1 + column_ix, col_to_lines)
-                print_column(f'{(score > 0).sum() / len(df):.4f}', 1 + column_ix, col_to_lines)
+                print_column(
+                    f'{(score > 0).sum() / len(df):.4f}',
+                    1 + column_ix,
+                    col_to_lines,
+                )
 
             if date_from is None:
                 print_column('------------', 2 + column_ix, col_to_lines)
@@ -118,7 +124,7 @@ def sim(
 
 
 def print_column(txt: str, i: int, col_to_lines) -> None:
-    col_to_lines[i].append(txt)    
+    col_to_lines[i].append(txt)
 
 
 # %% [markdown]
@@ -133,6 +139,7 @@ for min_val, max_val in (
     (-0.40, 0.30),
     (-0.45, 0.45),
 ):
+
     def _get_score(df: pd.DataFrame) -> np.array:
         x = df['dln_exp_no_vol_log_3d']
         y = df['dln_exp_no_vol_log_24d']
@@ -140,13 +147,16 @@ for min_val, max_val in (
         bin_x = 0.2
         bin_y = 0.2
         min_x = -0.8
-        score = (
-            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
-            * x.between(-0.50, 0.50).astype('int')
-        )
+        score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+            min_val, max_val
+        ) * x.between(-0.50, 0.50).astype('int')
         return score
 
-    sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}', use_validation_df=True)
+    sim(
+        _get_score,
+        title=f'{min_val:.2f} -- {max_val:.2f}',
+        use_validation_df=True,
+    )
     print()
 
 # %% [markdown]
@@ -169,6 +179,7 @@ for min_val, max_val in (
     (-0.40, 0.30),
     (-0.45, 0.45),
 ):
+
     def _get_score(df: pd.DataFrame) -> np.array:
         x = df['dln_exp_no_vol_log_3d']
         y = df['dln_exp_no_vol_log_24d']
@@ -176,10 +187,9 @@ for min_val, max_val in (
         bin_x = 0.2
         bin_y = 0.2
         min_x = -0.8
-        score = (
-            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
-            * x.between(-0.50, 0.50).astype('int')
-        )
+        score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+            min_val, max_val
+        ) * x.between(-0.50, 0.50).astype('int')
         return score
 
     sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
@@ -192,6 +202,7 @@ for min_val, max_val in (
 # %% tags=[]
 def sim_ranges(val_min, val_max, step):
     for val in np.arange(val_min, val_max, step):
+
         def _get_score(df: pd.DataFrame) -> np.array:
             x = df['dln_exp_no_vol_log_3d']
             y = df['dln_exp_no_vol_log_24d']
@@ -199,16 +210,20 @@ def sim_ranges(val_min, val_max, step):
             bin_x = 0.2
             bin_y = 0.2
             min_x = -0.8
-            score =(
-                (y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(val, val + step)
+            score = (
+                (y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+                    val, val + step
+                )
                 # ~y.between(-0.30, 0.30)
                 & x.between(-0.50, 0.50)
             )
             return score
+
         sim(_get_score, title=f'{val:.2f} -- {val + step:.2f}')
         print()
 
-sim_ranges(-0.8, 0.8, 0.1) 
+
+sim_ranges(-0.8, 0.8, 0.1)
 
 
 # %% [markdown]
@@ -226,11 +241,9 @@ def _get_score(df: pd.DataFrame) -> np.array:
     bin_x = 0.2
     bin_y = 0.2
     min_x = -0.8
-    score = (
-        ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.30, 0.15)
-        &
-        ~x.between(-0.25, 0.50).astype('int')
-    )
+    score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+        -0.30, 0.15
+    ) & ~x.between(-0.25, 0.50).astype('int')
     return score
 
 
@@ -245,6 +258,7 @@ sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
 # %% jupyter={"outputs_hidden": true} tags=[]
 def sim_ranges(val_min, val_max, step):
     for val in np.arange(val_min, val_max, step):
+
         def _get_score(df: pd.DataFrame) -> np.array:
             x = df['dln_exp_no_vol_log_3d']
             y = df['dln_exp_no_vol_log_24d']
@@ -252,13 +266,14 @@ def sim_ranges(val_min, val_max, step):
             bin_x = 0.2
             bin_y = 0.2
             min_x = -0.8
-            score =(
-                ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(-0.3, 0.2)
-                & x.between(val, val + step)
-            )
+            score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+                -0.3, 0.2
+            ) & x.between(val, val + step)
             return score
+
         sim(_get_score, title=f'{val:.2f} -- {val + step:.2f}')
         print()
+
 
 sim_ranges(-0.9, 0.9, 0.1)
 
@@ -286,13 +301,13 @@ def sim_ranges(min_val, max_val):
         bin_x = 0.2
         bin_y = 0.2
         min_x = -0.8
-        score = (
-            ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(min_val, max_val)
-            & x.between(-1, 0.50)
-        )
+        score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+            min_val, max_val
+        ) & x.between(-1, 0.50)
         return score
 
     sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+
 
 for min_val, max_val in (
     (-0.30, +0.35),
@@ -329,5 +344,6 @@ def _get_score(df: pd.DataFrame) -> np.array:
         0, slope_bin * (x - min_x) / bin_x - (y - min_y) / bin_y
     )
     return score
+
 
 sim(_get_score)

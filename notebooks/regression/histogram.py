@@ -17,6 +17,7 @@ import math
 
 from matplotlib import colors
 
+
 def plot_2d_hist(
     df_k,
     n_days,
@@ -72,8 +73,8 @@ def plot_2d_hist(
 
 def format_number(value, n) -> str:
     for num, qual in zip(
-        (10**(3 * i) for i in range(4, -5, -1)),
-        ('T', 'G', 'M', 'K', '', 'm', 'μ', 'n', 'p')
+        (10 ** (3 * i) for i in range(4, -5, -1)),
+        ('T', 'G', 'M', 'K', '', 'm', 'μ', 'n', 'p'),
     ):
         if value >= num:
             return f'{int(round(value / num, n))}{qual}'
@@ -87,7 +88,7 @@ plot_2d_hist(
     delay_to_df[7],
     7,
     'ad_exp_72d',
-    'dln_exp_no_vol_log_72d',    
+    'dln_exp_no_vol_log_72d',
     ax=ax,
     bins=(100, 100),
     plot_values=False,
@@ -99,14 +100,16 @@ plt.show()
 # %%
 for delay, df in delay_to_df.items():
     df['dln_exp_log_3d'] = log_scale_value(df['dln_exp_3d'], 2000)
-    df['dln_exp_no_vol_log_24d'] = log_scale_value(df['dln_exp_no_vol_24d'], 2000)
+    df['dln_exp_no_vol_log_24d'] = log_scale_value(
+        df['dln_exp_no_vol_24d'], 2000
+    )
 
 fig, axes = plt.subplots(figsize=(20, 10), ncols=2)
 plot_2d_hist(
     delay_to_df[7],
     7,
     'dln_exp_log_3d',
-    'dln_exp_3d',    
+    'dln_exp_3d',
     ax=axes[0],
     bins=(100, 100),
     plot_values=False,
@@ -179,7 +182,10 @@ def plot_histogram_pairs(field_grps):
     profit_field = 'profit_in_currency'
 
     fig, axes = plt.subplots(
-        figsize=(15 * len(field_grps[0]), 5 * len(delay_to_df) * len(field_grps)),
+        figsize=(
+            15 * len(field_grps[0]),
+            5 * len(delay_to_df) * len(field_grps),
+        ),
         nrows=len(delay_to_df) * len(field_grps),
         ncols=len(field_grps[0]),
     )
@@ -228,10 +234,7 @@ plot_histogram_pairs(
 
 # %%
 plot_histogram_pairs(
-    [
-        (f'indicator_{duration}', f'ad_exp_{duration}')
-        for duration in durations
-    ]
+    [(f'indicator_{duration}', f'ad_exp_{duration}') for duration in durations]
 )
 
 # %%

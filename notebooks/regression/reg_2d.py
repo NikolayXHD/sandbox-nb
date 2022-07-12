@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -60,7 +60,7 @@ def create_estimator_bins_2d(delay, radius, regression_bins=None):
 
     if regression_bins is None:
         regression_bins = (40, 40, 1)
-    
+
     return histogram.Histogram2dRegressionWrapper(
         bins=regression_bins,
         shuffle=False,
@@ -94,20 +94,20 @@ def plot_model_2d(
     v_max_line: float = +10,
     v_step_line: float = 0.2,
     bins: typing.Tuple[int, int] = (100, 100),
-    levels = None,
+    levels=None,
     log_alpha_scale=True,
 ):
     if levels is None:
         levels = np.linspace(v_min_line, v_max_line, num=v_num_line)
-    
+
     hist, x_edges, y_edges = np.histogram2d(
-        hist_x[:,0],
-        hist_x[:,1],
+        hist_x[:, 0],
+        hist_x[:, 1],
         weights=hist_w,
         range=((min_x0, max_x0), (min_x1, max_x1)),
         bins=bins,
     )
-    
+
     x = np.linspace(min_x0, max_x0, num=bins[0])
     y = np.linspace(min_x1, max_x1, num=bins[1])
     g = np.meshgrid(x, y)
@@ -118,16 +118,19 @@ def plot_model_2d(
     y_pred = reg_k.predict(X_pred_scaled)
 
     assert X.shape == Y.shape
-    Z = y_pred.reshape(X.shape)    
+    Z = y_pred.reshape(X.shape)
 
     v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
 
     hist_min = hist[hist > 0].min()
     alphas = (
-        np.log(np.maximum(hist, hist_min) / hist_min) if log_alpha_scale
+        np.log(np.maximum(hist, hist_min) / hist_min)
+        if log_alpha_scale
         else hist
     )
-    alphas = np.minimum(1, alphas * ((1 - alpha_min) / alphas.max()) + alpha_min)
+    alphas = np.minimum(
+        1, alphas * ((1 - alpha_min) / alphas.max()) + alpha_min
+    )
     alphas = alphas.T
 
     ax.imshow(
@@ -397,7 +400,7 @@ plot_facet_2d(
     indicator_2_field='dln_exp_no_vol_24d',
     min_x1=-0.04,
     max_x1=+0.04,
-    radius=0.005,    
+    radius=0.005,
     alpha_min=0.1,
     v_step_line=0.25,
     levels=(

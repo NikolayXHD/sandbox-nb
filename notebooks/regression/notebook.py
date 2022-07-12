@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -74,10 +74,15 @@ def append_log_indicators(df):
     return df.assign(
         **{
             f'{indicator}_log_{duration}': log_scale_value(
-                df[f'{indicator}_{duration}'], 10**4
+                df[f'{indicator}_{duration}'], 10 ** 4
             )
             for duration in durations
-            for indicator in ('indicator', 'ad_exp', 'dln_exp', 'dln_exp_no_vol')
+            for indicator in (
+                'indicator',
+                'ad_exp',
+                'dln_exp',
+                'dln_exp_no_vol',
+            )
             if f'{indicator}_{duration}' in df
         }
     )
@@ -87,9 +92,7 @@ def append_log_indicators(df):
 # Never use it to find regularities in data, rather use it to
 # validate the findings
 delay_to_df_validate = {
-    delay: append_log_indicators(
-        build_df(path, max_list_level=2)
-    )
+    delay: append_log_indicators(build_df(path, max_list_level=2))
     for delay, path in delay_to_dir.items()
 }
 
@@ -100,9 +103,7 @@ DATE_RANGES_VALIDATION = tuple(
 DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
 
 delay_to_df = {
-    delay: filter_df_by_dates(
-        df, None, DATE_RANGES[-1][1]
-    )
+    delay: filter_df_by_dates(df, None, DATE_RANGES[-1][1])
     for delay, df in delay_to_df_validate.items()
 }
 
@@ -131,7 +132,9 @@ def get_df(
 
 
 def iterate_date_ranges(
-    *, append_empty_range: bool = False, use_validation_df: bool = False,
+    *,
+    append_empty_range: bool = False,
+    use_validation_df: bool = False,
 ) -> typing.Iterable[typing.Tuple[datetime | None, datetime | None]]:
     ranges = DATE_RANGES_VALIDATION if use_validation_df else DATE_RANGES
     for r in ranges:
