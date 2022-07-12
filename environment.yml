@@ -1,12 +1,7 @@
 name: notebooks
 channels:
-  - rapidsai
-  - nvidia
   - conda-forge
 dependencies:
-  - cudf=21.12
-  - cudatoolkit=11.5
-  - cuml=21.12
   - flake8=*
   - joblib=*
   - jupyter=*
