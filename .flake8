@@ -9,4 +9,4 @@ exclude = .mypy_cache,.pytest_cache,.storage,.unversioned,__pycache__,.ipynb_che
 ignore = E721,E741,E743,F401,W503,E203
 per-file-ignores =
     notebooks/**/*.py:E402,F811
-    .jupyter/jupyter_notebook_config.py:E265,E266,E501,W291,F821
+    .jupyter/*_config.py:E265,E266,E501,W291,F821
