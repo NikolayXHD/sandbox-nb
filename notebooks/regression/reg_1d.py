@@ -5,14 +5,21 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
+# %% [raw]
+#
+
 # %%
+from __future__ import annotations
+
+from datetime import datetime
+
 from regression.memory import control_output
 
 
@@ -43,6 +50,8 @@ from datetime import datetime
 import typing
 
 from matplotlib import ticker
+from matplotlib import pyplot as plt
+import numpy as np
 from regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
 from sklearn import ensemble
@@ -236,7 +245,7 @@ def plot_facet_1d(
         # 'profit'
     ),
     figsize=(28, 8),
-    regression_bins: typing.Tuple[int, int | None] = None,
+    regression_bins: typing.Tuple[int, int] | None = None,
     use_validation_df: bool = False,
     **kwargs,
 ) -> None:
@@ -258,20 +267,30 @@ def plot_facet_1d(
         ):
             if date_from is None:
                 assert date_to is None
-                kwargs_copy = {**kwargs, 'color': 'white', 'linewidth': 3}
+                plot_regressions_1d(
+                    date_from=date_from,
+                    date_to=date_to,
+                    indicator_field=indicator_field,
+                    profit_field=profit_field,
+                    axes=current_axes,
+                    regression_bins=regression_bins,
+                    use_validation_df=use_validation_df,
+                    color='white',
+                    linewidth=3,
+                    **kwargs,
+                )
             else:
-                kwargs_copy = {**kwargs, 'num_color': i_date_range}
-
-            plot_regressions_1d(
-                date_from=date_from,
-                date_to=date_to,
-                indicator_field=indicator_field,
-                profit_field=profit_field,
-                axes=current_axes,
-                regression_bins=regression_bins,
-                use_validation_df=use_validation_df,
-                **kwargs_copy,
-            )
+                plot_regressions_1d(
+                    date_from=date_from,
+                    date_to=date_to,
+                    indicator_field=indicator_field,
+                    profit_field=profit_field,
+                    axes=current_axes,
+                    regression_bins=regression_bins,
+                    use_validation_df=use_validation_df,
+                    num_color=i_date_range,
+                    **kwargs,
+                )
 
     plt.show()
 

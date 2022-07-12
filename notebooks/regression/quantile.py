@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -13,10 +13,9 @@
 # ---
 
 # %%
-df = delay_to_df[180]
-df.describe()
+from __future__ import annotations
 
-# %%
+import pandas as pd
 import itertools
 
 
@@ -66,6 +65,9 @@ df_indicator_quantiles = build_df_indicator_quantiles(
 df_indicator_quantiles
 
 # %%
+from matplotlib import pyplot as plt
+import seaborn as sns
+
 fig, ax = plt.subplots(figsize=(20, 10))
 sns.lineplot(data=df_indicator_quantiles, ax=ax)
 plt.xticks(rotation=45)

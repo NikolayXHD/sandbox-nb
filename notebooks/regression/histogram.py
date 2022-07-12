@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -13,9 +13,12 @@
 # ---
 
 # %%
+from __future__ import annotations
+
 import math
 
 from matplotlib import colors
+from matplotlib import pyplot as plt
 
 
 def plot_2d_hist(
@@ -240,6 +243,10 @@ plot_histogram_pairs(
 # %%
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
 
 def plot_histograms(*, indicator_field: str, profit_field: str) -> None:

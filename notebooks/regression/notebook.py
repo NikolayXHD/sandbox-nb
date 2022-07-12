@@ -19,6 +19,7 @@ from __future__ import annotations
 from datetime import datetime
 import os
 from pathlib import Path
+import typing
 
 import numpy as np
 import pandas as pd
@@ -66,11 +67,11 @@ delay_to_dir = {
 }
 
 
-def log_scale_value(values: np.array, scale: float) -> np.array:
+def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
     return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
 
 
-def append_log_indicators(df):
+def append_log_indicators(df: pd.DataFrame):
     return df.assign(
         **{
             f'{indicator}_log_{duration}': log_scale_value(

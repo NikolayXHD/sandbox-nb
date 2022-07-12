@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -13,35 +13,64 @@
 # ---
 
 # %% [markdown]
-# $1$ наблюдение = $1$ свеча некоторого тикера $t$ в момент времени (интервал) $m$, обычно 1 минута
+# $1$ наблюдение = $1$ свеча некоторого тикера $t$ в момент времени (интервал)
+# $m$, обычно 1 минута
 #
 # Будем группировать интералы $m$ по целым дням $d$
 #
 # Без дополнительного взвешивания $\displaystyle w_{tm} = 1$
 #
-# $w_{d} = \displaystyle \sum_{t,m \in d} w_{tm} = \displaystyle \sum_{t,m} 1 = n_d$
+# $w_{d} = \displaystyle \sum_{t,m \in d} w_{tm}
+# = \displaystyle \sum_{t,m} 1 = n_d$
 #
 # дни имеют разный суммарный вес
 #
-# Покажем, что суммарный вес всех дней станет однинаковый, если задать вес функцией вида $w_{tm}^* = \displaystyle \frac{f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})}$
+# Покажем, что суммарный вес всех дней станет однинаковый, если задать вес
+# функцией вида
+# $w_{tm}^* =
+# \displaystyle \frac{f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})}$
 #
-# $w_{d}^* = \displaystyle \sum_{t,m \in d} w^*_{tm} = \displaystyle \sum_{t,m \in d} \displaystyle \frac{f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})} = \displaystyle \frac{\displaystyle \sum_{t,m \in d}f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})} = \displaystyle \frac{\displaystyle \sum_t n_{td} \cdot f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})} = 1$
+# $w_{d}^*=
+# \displaystyle \sum_{t,m \in d} w^*_{tm} =
+# \displaystyle \sum_{t,m \in d}
+# \displaystyle \frac{f(n_{td})}{\displaystyle \sum_t n_{td} \cdot f(n_{td})} =
+# \displaystyle \frac{\displaystyle \sum_{t,m \in d}f(n_{td})}
+# {\displaystyle \sum_t n_{td} \cdot f(n_{td})} =
+# \displaystyle \frac{\displaystyle \sum_t n_{td} \cdot f(n_{td})}
+# {\displaystyle \sum_t n_{td} \cdot f(n_{td})} = 1$
 #
 # Выбор функции $f$ позволяет балансировать вес между тикерами в рамках 1 дня.
 #
-# В простейшем случае $f = 1 \implies \displaystyle w_{tm}^* = \displaystyle \frac{1}{\displaystyle \sum_t n_{td}} = \displaystyle \frac{1}{n_d}$
+# В простейшем случае
+# $f = 1 \implies \displaystyle w_{tm}^* =
+# \displaystyle \frac{1}{\displaystyle \sum_t n_{td}} =
+# \displaystyle \frac{1}{n_d}$
 #
-# Тогда суммарный вес тикера за 1 день $w_{td}^* = n_{td}$, то есть прямо пропорционален количеству свеч этого тикера в этот день.
+# Тогда суммарный вес тикера за 1 день $w_{td}^* = n_{td}$, то есть прямо
+# пропорционален количеству свеч этого тикера в этот день.
 #
-# Подберём $f$, чтобы сгладить это различие до, например, $w_{td}^{**} = C \cdot \ln n_{td}$
+# Подберём $f$, чтобы сгладить это различие до, например,
+# $w_{td}^{**} = C \cdot \ln n_{td}$
 #
-# Этому условию удовлетворяет $f(n_{td}) = \displaystyle \frac{\ln n_{td}}{n_{td}}$, отсюда
+# Этому условию удовлетворяет
+# $f(n_{td}) = \displaystyle \frac{\ln n_{td}}{n_{td}}$, отсюда
 #
-# $ w_{tm}^{**} = \displaystyle \frac{\displaystyle \frac{\ln n_{td}}{n_{td}}}{\displaystyle \sum_{t} n_{td} \cdot \displaystyle \frac{\ln n_{td}}{n_{td}}} = \displaystyle \frac{\ln n_{td}}{n_{td} \cdot \displaystyle \sum_{t} \ln n_{td}}$
+# $ w_{tm}^{**} =
+# \displaystyle \frac{\displaystyle
+# \frac{\ln n_{td}}{n_{td}}}
+# {\displaystyle \sum_{t} n_{td} \cdot
+# \displaystyle \frac{\ln n_{td}}{n_{td}}} =
+# \displaystyle \frac{\ln n_{td}}
+# {n_{td} \cdot \displaystyle \sum_{t} \ln n_{td}}$
 #
-# Глядя на формулу $ w_{tm}^{**} $ можно понять, для чего приведено подробное обоснование. Ясно ли сходу, зачем в знаменателе первый множитель $n_{td}$?
+# Глядя на формулу $ w_{tm}^{**} $ можно понять, для чего приведено подробное
+# обоснование. Ясно ли сходу, зачем в знаменателе первый множитель $n_{td}$?
 
 # %%
+from __future__ import annotations
+
+import numpy as np
+
 df_agg_source = delay_to_df[180][['ticker', 't']]
 df_agg_source = df_agg_source.assign(
     **{'d': df_agg_source['t'] // (3600 * 24)}

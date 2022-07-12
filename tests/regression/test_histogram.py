@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 from numpy import testing
 
-from notebooks.regression import histogram
+from regression import histogram
 
 
 # noinspection PyPep8Naming

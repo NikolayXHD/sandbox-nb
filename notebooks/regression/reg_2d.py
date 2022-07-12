@@ -13,6 +13,11 @@
 # ---
 
 # %%
+from __future__ import annotations
+
+from datetime import datetime
+import typing
+
 from regression.memory import control_output
 
 
@@ -50,6 +55,8 @@ from regression.k_neighbors import KNeighborsWeightedRegressor
 from scipy.stats import norm
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib import cm
+from matplotlib import pyplot as plt
+import numpy as np
 
 CACHE = True
 
@@ -119,8 +126,6 @@ def plot_model_2d(
 
     assert X.shape == Y.shape
     Z = y_pred.reshape(X.shape)
-
-    v_num_line = 1 + int(round((v_max_line - v_min_line) / v_step_line))
 
     hist_min = hist[hist > 0].min()
     alphas = (

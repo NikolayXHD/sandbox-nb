@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import typing
 
 from pathlib import Path
 
@@ -140,7 +141,9 @@ def filter_df_by_dates(
         if date_to is not None
         else len(df)
     )
-    return df.iloc[index_t_from:index_t_to]
+    assert isinstance(index_t_from, typing.SupportsInt), str(index_t_from)
+    assert isinstance(index_t_to, typing.SupportsInt), str(index_t_to)
+    return df.iloc[int(index_t_from):int(index_t_to)]
 
 
 __all__ = ['build_df', 'filter_df_by_dates']

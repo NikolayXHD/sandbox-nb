@@ -13,6 +13,8 @@
 # ---
 
 # %%
+from __future__ import annotations
+
 from collections import defaultdict
 import typing
 
@@ -21,13 +23,13 @@ import pandas as pd
 
 
 def sim(
-    get_score: typing.Callable[[pd.DataFrame], np.array],
+    get_score: typing.Callable[[pd.DataFrame], np.ndarray],
     *,
     profit_fld: str = 'profit_in_currency',
     use_validation_df: bool = False,
     title: str | None = None,
 ) -> None:
-    col_to_lines = defaultdict(list)
+    col_to_lines: defaultdict[int, list[str]] = defaultdict(list)
 
     print_column('', 0, col_to_lines)
     print_column(title or '', 0, col_to_lines)
@@ -45,13 +47,17 @@ def sim(
         )
 
     print_column('', 1, col_to_lines)
-    print_column(f'freq', 1, col_to_lines)
+    print_column('freq', 1, col_to_lines)
     print_column('-----', 1, col_to_lines)
 
     for column_ix, delay in enumerate(delay_to_df.keys()):
         print_column(str(delay), 2 + column_ix, col_to_lines)
-        # print_column('~w/rnd ~w     +w/rnd  +w    ', 2 + column_ix, col_to_lines)
-        # print_column('--------------------------', 2 + column_ix, col_to_lines)
+        # print_column(
+        #     '~w/rnd ~w     +w/rnd  +w    ', 2 + column_ix, col_to_lines
+        # )
+        # print_column(
+        #     '--------------------------', 2 + column_ix, col_to_lines
+        # )
         print_column('+w/rnd  +w  ', 2 + column_ix, col_to_lines)
         print_column('------------', 2 + column_ix, col_to_lines)
 
@@ -69,7 +75,9 @@ def sim(
             score = get_score(df)
 
             # try:
-            #     positive_average = np.average(df[profit_fld].values, weights=score)
+            #     positive_average = np.average(
+            #         df[profit_fld].values, weights=score
+            #     )
             # except ZeroDivisionError:
             #     positive_average = np.nan
 
@@ -140,7 +148,7 @@ for min_val, max_val in (
     (-0.45, 0.45),
 ):
 
-    def _get_score(df: pd.DataFrame) -> np.array:
+    def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
         x = df['dln_exp_no_vol_log_3d']
         y = df['dln_exp_no_vol_log_24d']
         slope_bin = 0.5 / 8  #
@@ -160,7 +168,7 @@ for min_val, max_val in (
     print()
 
 # %% [markdown]
-# ## Consecutive narrowing down of long indicator range `dln_exp_no_vol_log_24d`
+# ## Narrowing down of long indicator range `dln_exp_no_vol_log_24d`
 #
 # ```
 # frequency       | 180d  30d   7d    |
@@ -180,7 +188,7 @@ for min_val, max_val in (
     (-0.45, 0.45),
 ):
 
-    def _get_score(df: pd.DataFrame) -> np.array:
+    def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
         x = df['dln_exp_no_vol_log_3d']
         y = df['dln_exp_no_vol_log_24d']
         slope_bin = 0.5 / 8  #
@@ -200,10 +208,11 @@ for min_val, max_val in (
 # ## Slice short indicator `dln_exp_no_vol_log_3d`
 
 # %% tags=[]
-def sim_ranges(val_min, val_max, step):
+def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
     for val in np.arange(val_min, val_max, step):
 
-        def _get_score(df: pd.DataFrame) -> np.array:
+        # type: ignore[no-redef]
+        def _get_score(df: pd.DataFrame) -> np.ndarray:
             x = df['dln_exp_no_vol_log_3d']
             y = df['dln_exp_no_vol_log_24d']
             slope_bin = 0.5 / 8
@@ -229,12 +238,11 @@ sim_ranges(-0.8, 0.8, 0.1)
 # %% [markdown]
 # ## Maximal 180d profit
 #
-# since extreme values of long indicator have high 180d income and low / negative 7d, 30d incomes,
-#
-# maximal 180d income is achieved at 4 corners
+# since extreme values of long indicator have high 180d income and low /
+# negative 7d, 30d incomes, maximal 180d income is achieved at 4 corners
 
 # %% tags=[]
-def _get_score(df: pd.DataFrame) -> np.array:
+def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
     x = df['dln_exp_no_vol_log_3d']
     y = df['dln_exp_no_vol_log_24d']
     slope_bin = 0.5 / 8
@@ -256,10 +264,11 @@ sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
 # ## Slice long indicator `dln_exp_no_vol_log_24d`
 
 # %% jupyter={"outputs_hidden": true} tags=[]
-def sim_ranges(val_min, val_max, step):
+def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
     for val in np.arange(val_min, val_max, step):
 
-        def _get_score(df: pd.DataFrame) -> np.array:
+        # type: ignore[no-redef]
+        def _get_score(df: pd.DataFrame) -> np.ndarray:
             x = df['dln_exp_no_vol_log_3d']
             y = df['dln_exp_no_vol_log_24d']
             slope_bin = 0.5 / 8
@@ -293,8 +302,8 @@ sim_ranges(-0.9, 0.9, 0.1)
 # ```
 
 # %% tags=[]
-def sim_ranges(min_val, max_val):
-    def _get_score(df: pd.DataFrame) -> np.array:
+def sim_range(min_val, max_val):  # type: ignore[no-redef]
+    def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
         x = df['dln_exp_no_vol_log_3d']
         y = df['dln_exp_no_vol_log_72d']
         slope_bin = 0.25 / 8
@@ -314,25 +323,30 @@ for min_val, max_val in (
     (-0.40, +0.40),
     (-0.45, +0.45),
 ):
-    sim_ranges(min_val, max_val)
+    sim_range(min_val, max_val)
     print()
 
 
 # %% [markdown]
-# ## Example of treating desirability (score) as probability (weight) multiplier
+# ## Example of treating desirability as probability multiplier
 #
-# Since we buy more stock with hihger score, it's logical these stocks will have bigger impact on profits.
+# Since we buy more stock with hihger score, it's logical these stocks will
+# have bigger impact on profits.
 #
-# However, simply multiplying existing "probablity" weight by "desirability" score, ignores the practical limitation.
+# However, simply multiplying existing "probablity" weight by "desirability"
+# score, ignores the practical limitation.
 #
-# When the day comes and extreme score is observed, our possibilities to buy more are limited by our total porfolio value.
+# When the day comes and extreme score is observed, our possibilities to buy
+# more are limited by our total porfolio value.
 #
-# We cannot borrow money from the past (time machine needed), nor we want to borrow from the future (we hate banks).
+# We cannot borrow money from the past (time machine needed), nor we want to
+# borrow from the future (we hate banks).
 #
-# Therefore relative desirability can only rebalance weights between the stocks available at the same time. (Not implemented yet)
+# Therefore relative desirability can only rebalance weights between the stocks
+# available at the same time. (Not implemented yet)
 
 # %% tags=[] jupyter={"outputs_hidden": true}
-def _get_score(df: pd.DataFrame) -> np.array:
+def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
     x = df['dln_exp_3d']
     y = df['dln_exp_no_vol_24d']
     slope_bin = 4 / 8
