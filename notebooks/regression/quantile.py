@@ -47,15 +47,19 @@ df_indicator_quantiles = build_df_indicator_quantiles(
         'indicator_4h',
         'indicator_3d',
         'indicator_24d',
+        'indicator_72d',
         'ad_exp_4h',
         'ad_exp_3d',
         'ad_exp_24d',
+        'ad_exp_72d',
         'dln_exp_4h',
         'dln_exp_3d',
         'dln_exp_24d',
+        'dln_exp_72d',
         'dln_exp_no_vol_4h',
         'dln_exp_no_vol_3d',
         'dln_exp_no_vol_24d',
+        'dln_exp_no_vol_72d',
     ]
 )
 

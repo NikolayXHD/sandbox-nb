@@ -44,7 +44,7 @@ delay_to_style = {
     180: '-',
 }
 
-durations = ('4h', '3d', '24d')
+durations = ('4h', '3d', '24d', '72d')
 
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
@@ -56,8 +56,8 @@ delay_to_dir = {
         '_'.join(durations),
         'market_False',
         'profit_currency_USD',
-        'cmf_False',
-        'ad_False',
+        'cmf_True',
+        'ad_True',
         'dln_True',
         'dln_no_vol_True',
         f'{delay}d',
