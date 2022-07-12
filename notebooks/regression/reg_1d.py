@@ -541,16 +541,26 @@ plot_facet_1d(
     figsize=(28, 10),
 )
 
-# %% jupyter={"outputs_hidden": true} tags=[]
+# %% tags=[]
 plot_facet_1d(
     indicator_field='indicator_24d',
     relative=+0.45,
     figsize=(28, 10),
 )
 
-# %% jupyter={"outputs_hidden": true} tags=[]
+# %% tags=[]
 plot_facet_1d(
     indicator_field='ad_exp_24d',
     # relative=0,
     figsize=(28, 10),
+)
+
+# %%
+plot_facet_1d(
+    indicator_field='ad_exp_72d',
+    figsize=(28, 10),
+    min_x=-0.4,
+    max_x=+0.5,
+    radius=0.01,
+    regression_bins=(200, 1),
 )
