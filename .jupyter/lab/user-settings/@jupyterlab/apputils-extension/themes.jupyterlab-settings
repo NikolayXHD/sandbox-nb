@@ -1,0 +1,12 @@
+{
+    "theme": "Darcula",
+    "theme-scrollbars": true,
+    "overrides": {
+        "code-font-family": "JetBrainsMono Nerd Font Mono",
+        "code-font-size": "15px",
+        "content-font-family": "JetBrainsMono Nerd Font Mono",
+        "content-font-size1": "15px",
+        "ui-font-family": "JetBrainsMono Nerd Font Mono",
+        "ui-font-size1": "14px"
+    }
+}
