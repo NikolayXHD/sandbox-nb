@@ -81,6 +81,22 @@ def format_number(value, n) -> str:
 
 
 # %%
+fig, ax = plt.subplots(figsize=(15, 15))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'ad_exp_72d',
+    'dln_exp_no_vol_log_72d',    
+    ax=ax,
+    bins=(100, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
 for delay, df in delay_to_df.items():
     df['dln_exp_log_3d'] = log_scale_value(df['dln_exp_3d'], 2000)
     df['dln_exp_no_vol_log_24d'] = log_scale_value(df['dln_exp_no_vol_24d'], 2000)
