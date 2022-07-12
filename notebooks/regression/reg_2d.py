@@ -128,6 +128,7 @@ def plot_model_2d(
         else hist
     )
     alphas = np.minimum(1, alphas * ((1 - alpha_min) / alphas.max()) + alpha_min)
+    alphas = alphas.T
 
     ax.imshow(
         Z * 0,
@@ -251,6 +252,29 @@ def plot_facet_2d(use_validation_df: bool = False, **kwargs):
         )
 
 
+# %% jupyter={"outputs_hidden": true} tags=[]
+plot_facet_2d(
+    indicator_1_field='ad_exp_72d',
+    min_x0=-0.5,
+    max_x0=+0.6,
+    indicator_2_field='dln_exp_no_vol_log_72d',
+    min_x1=-0.60,
+    max_x1=+0.60,
+    alpha_min=0.1,
+    v_min_color=-1.5,
+    v_max_color=+1.5,
+    levels=(
+        *np.linspace(-6.0, -2.8, num=5),
+        *np.linspace(-2.0, -0.4, num=5),
+        *(-0.2, -0.1, 0, +0.1, +0.2),
+        *np.linspace(+0.4, +2.0, num=5),
+        *np.linspace(+2.8, +6.0, num=5),
+    ),
+    regression_bins=(200, 200, 1),
+    radius=0.04,
+    log_alpha_scale=True,
+)
+
 # %%
 plot_facet_2d(
     indicator_1_field='dln_exp_no_vol_log_3d',
@@ -300,11 +324,11 @@ plot_facet_2d(
 # %%
 plot_facet_2d(
     indicator_1_field='dln_exp_log_3d',
-    min_x0=-0.5,
-    max_x0=+0.5,
+    min_x0=-0.8,
+    max_x0=+0.8,
     indicator_2_field='dln_exp_no_vol_log_24d',
-    min_x1=-0.5,
-    max_x1=+0.5,
+    min_x1=-0.8,
+    max_x1=+0.8,
     alpha_min=0.1,
     v_min_color=-1.5,
     v_max_color=+1.5,
@@ -323,12 +347,12 @@ plot_facet_2d(
 # %%
 plot_facet_2d(
     indicator_1_field='dln_exp_3d',
-    min_x0=-0.025,
-    max_x0=+0.025,
+    min_x0=-0.04,
+    max_x0=+0.04,
     indicator_2_field='dln_exp_no_vol_24d',
-    min_x1=-0.01,
-    max_x1=+0.01,
-    alpha_min=0.2,
+    min_x1=-0.02,
+    max_x1=+0.02,
+    alpha_min=0.1,
     v_min_color=-1.5,
     v_max_color=+1.5,
     levels=(
@@ -338,8 +362,9 @@ plot_facet_2d(
         *np.linspace(+0.4, +2.0, num=5),
         *np.linspace(+2.8, +6.0, num=5),
     ),
-    regression_bins=(120, 120, 1),
-    radius=0.002,
+    regression_bins=(200, 200, 1),
+    radius=0.001,
+    log_alpha_scale=True,
 )
 
 # %%
@@ -350,7 +375,7 @@ plot_facet_2d(
     indicator_2_field='dln_exp_no_vol_24d',
     min_x1=-0.01,
     max_x1=+0.01,
-    alpha_min=0.2,
+    alpha_min=0.1,
     v_min_color=-1.5,
     v_max_color=+1.5,
     levels=(
@@ -373,7 +398,7 @@ plot_facet_2d(
     min_x1=-0.04,
     max_x1=+0.04,
     radius=0.005,    
-    alpha_min=0.2,
+    alpha_min=0.1,
     v_step_line=0.25,
     levels=(
         *np.linspace(-6.0, -2.8, num=5),
@@ -384,7 +409,7 @@ plot_facet_2d(
     ),
 )
 
-# %% tags=[]
+# %% tags=[] jupyter={"outputs_hidden": true}
 plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
@@ -396,7 +421,7 @@ plot_facet_2d(
     use_validation_df=True,
 )
 
-# %% tags=[]
+# %% tags=[] jupyter={"outputs_hidden": true}
 plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
@@ -407,7 +432,7 @@ plot_facet_2d(
     radius=0.012,
 )
 
-# %% jupyter={"outputs_hidden": true} tags=[]
+# %% tags=[] jupyter={"outputs_hidden": true}
 plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
