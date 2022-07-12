@@ -4,24 +4,24 @@ channels:
   - nvidia
   - conda-forge
 dependencies:
+  - cudf=21.12
+  - cudatoolkit=11.5
+  - cuml=21.12
   - flake8=*
-  - mypy=*
-  - pytest=*
-  - numpy=*
-  - pandas=*
-  - matplotlib=*
-  - seaborn=*
-  - scikit-learn=*
   - joblib=*
   - jupyter=*
   - jupyterlab=*
   - jupyterthemes=*
   - jupytext=*
-  - cudf=21.12
-  - cuml=21.12
-  - cudatoolkit=11.5
+  - matplotlib=*
+  - mypy=*
+  - numpy=*
+  - pandas=*
   - pip=*
   - pip:
       - brunette==0.2.0
+  - pytest=*
   - python-language-server[all]=0.36.2
+  - scikit-learn=*
+  - seaborn=*
   - theme-darcula=*
