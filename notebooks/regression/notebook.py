@@ -39,14 +39,7 @@ OUTPUT_STORAGE_PATH = PWD.joinpath(
     '..', '..', '..', 'sandbox', '.storage', 'output'
 )
 
-delay_to_style = {
-    7: ':',
-    30: '--',
-    180: '-',
-}
-
 durations = ('4h', '3d', '24d', '72d')
-
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
         'regression',
@@ -57,64 +50,48 @@ delay_to_dir = {
         '_'.join(durations),
         'market_False',
         'profit_currency_USD',
-        'cmf_True',
+        'adv_True',
         'ad_True',
+        'dlnv_True',
         'dln_True',
-        'dln_no_vol_True',
         f'{delay}d',
     )
     for delay in (7, 30, 180)
 }
 
+delay_to_df_validate_raw = {
+    delay: build_df(path, max_list_level=2)
+    for delay, path in delay_to_dir.items()
+}
 
-def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
-    return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
+
+# %%
+def calculate_log_indicators(
+    delay_to_df: dict[int, pd.DataFrame]
+) -> dict[int, pd.DataFrame]:
+    return {
+        delay: append_log_indicators(df)
+        for delay, df in delay_to_df.items()
+    }
 
 
 def append_log_indicators(df: pd.DataFrame):
     return df.assign(
         **{
             f'{indicator}_log_{duration}': log_scale_value(
-                df[f'{indicator}_{duration}'], 10 ** 4
+                df[f'{indicator}_{duration}'], scale
             )
             for duration in durations
-            for indicator in (
-                'indicator',
-                'ad_exp',
-                'dln_exp',
-                'dln_exp_no_vol',
+            for indicator, scale in zip(
+                ('adv', 'ad', 'dlnv', 'dln'), (3, 3, 1000, 1000),
             )
             if f'{indicator}_{duration}' in df
         }
     )
 
 
-# Full dataset, including most recent year.
-# Never use it to find regularities in data, rather use it to
-# validate the findings
-delay_to_df_validate = {
-    delay: append_log_indicators(build_df(path, max_list_level=2))
-    for delay, path in delay_to_dir.items()
-}
-
-DATE_RANGES_VALIDATION = tuple(
-    (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
-    for y in range(2015, 2022)
-)
-DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
-
-delay_to_df = {
-    delay: filter_df_by_dates(df, None, DATE_RANGES[-1][1])
-    for delay, df in delay_to_df_validate.items()
-}
-
-time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
-
-memory_ = Memory(
-    str(CACHE_STORAGE_PATH),
-    mmap_mode='r',
-    verbose=False,
-)
+def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
+    return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
 
 
 def get_df(
@@ -148,5 +125,35 @@ def format_date(d: datetime | None) -> str:
     return str(d.date()) if d is not None else '***'
 
 
+# Full dataset, including most recent year.
+# Never use it to find regularities in data, rather use it to
+# validate the findings
+delay_to_df_validate = calculate_log_indicators(delay_to_df_validate_raw)
+
+DATE_RANGES_VALIDATION = tuple(
+    (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
+    for y in range(2015, 2022)
+)
+DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
+
+delay_to_df = {
+    delay: filter_df_by_dates(df, None, DATE_RANGES[-1][1])
+    for delay, df in delay_to_df_validate.items()
+}
+
+time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
+
+memory_ = Memory(
+    str(CACHE_STORAGE_PATH),
+    mmap_mode='r',
+    verbose=False,
+)
+
+delay_to_style = {
+    7: ':',
+    30: '--',
+    180: '-',
+}
+
 # %%
-delay_to_df[180]
+delay_to_df[7]
