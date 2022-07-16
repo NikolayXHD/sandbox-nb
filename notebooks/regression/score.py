@@ -83,7 +83,7 @@ def plot_score():
         -1,
         np.minimum(
             1, np.minimum(+x_slope * (x - x_left), -x_slope * (x - x_right))
-        )
+        ),
     )
 
     slope_bin = 0.5 / 8
@@ -102,7 +102,7 @@ def plot_score():
         1,
         np.maximum(
             -1, np.maximum(-y_slope * (y - y_left), +y_slope * (y - y_right))
-        )
+        ),
     )
 
     score = np.minimum(x_score, y_score)

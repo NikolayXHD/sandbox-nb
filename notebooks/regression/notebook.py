@@ -70,8 +70,7 @@ def calculate_log_indicators(
     delay_to_df: dict[int, pd.DataFrame]
 ) -> dict[int, pd.DataFrame]:
     return {
-        delay: append_log_indicators(df)
-        for delay, df in delay_to_df.items()
+        delay: append_log_indicators(df) for delay, df in delay_to_df.items()
     }
 
 
@@ -83,7 +82,8 @@ def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
             )
             for duration in durations
             for indicator, scale in zip(
-                ('adv', 'ad', 'dlnv', 'dln'), (3, 3, 1000, 1000),
+                ('adv', 'ad', 'dlnv', 'dln'),
+                (3, 3, 1000, 1000),
             )
             if f'{indicator}_{duration}' in df
         }

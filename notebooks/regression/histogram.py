@@ -99,7 +99,7 @@ def plot_histogram_pairs(field_grps, **kwargs):
             for k, num_days in enumerate(delay_to_df.keys()):
                 row = i
                 col = j * len(delay_to_df) + k
-                ax=axes[row, col]
+                ax = axes[row, col]
                 plot_2d_hist(
                     delay_to_df[num_days],
                     num_days,
@@ -109,7 +109,7 @@ def plot_histogram_pairs(field_grps, **kwargs):
                     bins=(100, 100),
                     **kwargs,
                 )
-                ax.yaxis.set_label_position("right")
+                ax.yaxis.set_label_position('right')
                 ax.yaxis.tick_right()
 
     plt.show()
@@ -133,26 +133,17 @@ plt.show()
 
 # %%
 plot_histogram_pairs(
-    [
-        (f'dlnv_log_{duration}', f'dln_log_{duration}')
-        for duration in durations
-    ]
+    [(f'dlnv_log_{duration}', f'dln_log_{duration}') for duration in durations]
 )
 
 # %%
 plot_histogram_pairs(
-    [
-        (f'dlnv_{duration}', f'dln_{duration}')
-        for duration in durations
-    ]
+    [(f'dlnv_{duration}', f'dln_{duration}') for duration in durations]
 )
 
 # %%
 plot_histogram_pairs(
-    [
-        (f'adv_log_{duration}', f'ad_log_{duration}')
-        for duration in durations
-    ],
+    [(f'adv_log_{duration}', f'ad_log_{duration}') for duration in durations],
     log_color_scale=False,
 )
 

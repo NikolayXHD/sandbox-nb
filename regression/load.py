@@ -143,7 +143,7 @@ def filter_df_by_dates(
     )
     assert isinstance(index_t_from, typing.SupportsInt), str(index_t_from)
     assert isinstance(index_t_to, typing.SupportsInt), str(index_t_to)
-    return df.iloc[int(index_t_from):int(index_t_to)]
+    return df.iloc[int(index_t_from) : int(index_t_to)]
 
 
 __all__ = ['build_df', 'filter_df_by_dates']
