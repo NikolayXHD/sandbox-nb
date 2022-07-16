@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %%
+# %% tags=[]
 from __future__ import annotations
 
 import math
@@ -24,7 +24,7 @@ from matplotlib import pyplot as plt
 def plot_2d_hist(
     df_k,
     n_days,
-    indicator_field,
+    adv_field,
     profit_field,
     ax=None,
     plot_xlabel=True,
@@ -38,7 +38,7 @@ def plot_2d_hist(
     ax.grid(False)
 
     hist, xbins, ybins, im = ax.hist2d(
-        df_k[indicator_field],
+        df_k[adv_field],
         df_k[profit_field],
         weights=None if ignore_weight else df_k['w'],
         bins=bins,
@@ -60,16 +60,13 @@ def plot_2d_hist(
                         format_number(hist[j, i], 0),
                         color='w',
                         fontsize=14,
-                        bbox={'alpha': 0.25, 'facecolor': 'b'},
-                        # fontweight="bold",
+                        bbox={'alpha': 0.15, 'facecolor': 'b'},
                     )
 
     if plot_xlabel:
-        ax.set_xlabel(indicator_field)
+        ax.set_xlabel(adv_field)
     if plot_ylabel:
         ax.set_ylabel(profit_field + ' ' + str(n_days))
-    ax.tick_params(axis='x', direction='in', pad=-12)
-    ax.tick_params(axis='y', direction='in', pad=-22)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
 
@@ -84,65 +81,86 @@ def format_number(value, n) -> str:
     return str(value)
 
 
-# %%
-fig, ax = plt.subplots(figsize=(15, 15))
+def plot_histogram_pairs(field_grps, **kwargs):
+    profit_field = 'profit_in_currency'
 
-plot_2d_hist(
-    delay_to_df[7],
-    7,
-    'ad_exp_72d',
-    'dln_exp_no_vol_log_72d',
-    ax=ax,
-    bins=(100, 100),
-    plot_values=False,
-    log_color_scale=True,
-)
-
-plt.show()
-
-# %%
-for delay, df in delay_to_df.items():
-    df['dln_exp_log_3d'] = log_scale_value(df['dln_exp_3d'], 2000)
-    df['dln_exp_no_vol_log_24d'] = log_scale_value(
-        df['dln_exp_no_vol_24d'], 2000
+    fig, axes = plt.subplots(
+        figsize=(
+            5 * len(delay_to_df) * len(field_grps[0]),
+            5 * len(field_grps),
+        ),
+        ncols=len(delay_to_df) * len(field_grps[0]),
+        nrows=len(field_grps),
     )
+    plt.tight_layout()
 
-fig, axes = plt.subplots(figsize=(20, 10), ncols=2)
-plot_2d_hist(
-    delay_to_df[7],
-    7,
-    'dln_exp_log_3d',
-    'dln_exp_3d',
-    ax=axes[0],
-    bins=(100, 100),
-    plot_values=False,
+    for i, fields in enumerate(field_grps):
+        for j, field in enumerate(fields):
+            for k, num_days in enumerate(delay_to_df.keys()):
+                row = i
+                col = j * len(delay_to_df) + k
+                ax=axes[row, col]
+                plot_2d_hist(
+                    delay_to_df[num_days],
+                    num_days,
+                    field,
+                    profit_field,
+                    ax=ax,
+                    bins=(100, 100),
+                    **kwargs,
+                )
+                ax.yaxis.set_label_position("right")
+                ax.yaxis.tick_right()
+
+    plt.show()
+
+
+# %%
+plot_histogram_pairs(
+    [
+        (f'dlnv_log_{duration}', f'dln_log_{duration}')
+        for duration in durations
+    ]
+)
+
+# %%
+plot_histogram_pairs(
+    [
+        (f'dlnv_{duration}', f'dln_{duration}')
+        for duration in durations
+    ]
+)
+
+# %%
+plot_histogram_pairs(
+    [
+        (f'adv_log_{duration}', f'ad_log_{duration}')
+        for duration in durations
+    ],
     log_color_scale=False,
 )
-plot_2d_hist(
-    delay_to_df[7],
-    7,
-    'dln_exp_no_vol_log_24d',
-    'dln_exp_no_vol_24d',
-    ax=axes[1],
-    bins=(100, 100),
-    plot_values=False,
+
+# %% [markdown]
+# `ad_3d` looks like accordion, probably due to weekends
+
+# %%
+plot_histogram_pairs(
+    [(f'adv_{duration}', f'ad_{duration}') for duration in durations],
     log_color_scale=False,
 )
-
-plt.show()
 
 # %% [markdown]
 # ## Demonstrate ignore_weight difference
 
-# %%
-fig, axes = plt.subplots(figsize=(20, 10), ncols=2)
+# %% tags=[] jupyter={"source_hidden": true}
+fig, axes = plt.subplots(figsize=(12, 5), ncols=2)
 
 for i, ignore_weight in enumerate((True, False)):
     plot_2d_hist(
         delay_to_df[7],
         7,
-        'dln_exp_3d',
-        'dln_exp_no_vol_24d',
+        'dlnv_3d',
+        'dln_24d',
         ax=axes[i],
         bins=(8, 8),
         val_range=((-0.1, +0.1), (-0.04, +0.04)),
@@ -151,13 +169,13 @@ for i, ignore_weight in enumerate((True, False)):
     )
 plt.show()
 
-# %%
-fig, ax = plt.subplots(figsize=(10, 10))
+# %% tags=[] jupyter={"source_hidden": true}
+fig, ax = plt.subplots(figsize=(5, 5))
 plot_2d_hist(
     delay_to_df[7],
     7,
-    'dln_exp_24d',
-    'dln_exp_no_vol_24d',
+    'dlnv_24d',
+    'dln_24d',
     ax=ax,
     bins=(8, 6),
     val_range=((-0.1, +0.1), (-0.030, +0.030)),
@@ -165,13 +183,13 @@ plot_2d_hist(
 )
 plt.show()
 
-# %%
-fig, ax = plt.subplots(figsize=(10, 10))
+# %% tags=[] jupyter={"source_hidden": true}
+fig, ax = plt.subplots(figsize=(5, 5))
 plot_2d_hist(
     delay_to_df[7],
     7,
-    'dln_exp_3d',
-    'dln_exp_no_vol_72d',
+    'dlnv_3d',
+    'dln_72d',
     ax=ax,
     bins=(8, 9),
     val_range=((-0.1, +0.1), (-0.0125, +0.010)),
@@ -180,67 +198,60 @@ plot_2d_hist(
 plt.show()
 
 
-# %%
-def plot_histogram_pairs(field_grps):
-    profit_field = 'profit_in_currency'
+# %% [markdown]
+# # test `log_scale_value`
 
-    fig, axes = plt.subplots(
-        figsize=(
-            15 * len(field_grps[0]),
-            5 * len(delay_to_df) * len(field_grps),
-        ),
-        nrows=len(delay_to_df) * len(field_grps),
-        ncols=len(field_grps[0]),
+# %% tags=[] jupyter={"source_hidden": true}
+def test_log_scale_value():
+    delay = 7
+    df = delay_to_df[delay]
+    df_test = df[['dlnv_3d', 'dln_24d', 'w']].assign(
+        **{
+            'dlnv_log_3d': log_scale_value(df['dlnv_3d'], 10 ** 4),
+            'dln_log_24d': log_scale_value(df['dln_24d'], 10 ** 4),
+        }
     )
-    plt.subplots_adjust(wspace=0.01, hspace=0.08)
 
-    for i, num_days in enumerate(delay_to_df.keys()):
-        for j, fields in enumerate(field_grps):
-            for k, field in enumerate(fields):
-                row = j * len(delay_to_df) + i
-                plot_2d_hist(
-                    delay_to_df[num_days],
-                    num_days,
-                    field,
-                    profit_field,
-                    ax=axes[row, k],
-                    plot_ylabel=k > 0,
-                    bins=(400, 200),
-                )
+    fig, axes = plt.subplots(figsize=(12, 5), ncols=2)
+    for i, (field, log_field) in enumerate(
+        (
+            ('dlnv_log_3d', 'dlnv_3d'),
+            ('dln_log_24d', 'dln_24d'),
+        )
+    ):
+        plot_2d_hist(
+            df_test,
+            delay,
+            log_field,
+            field,
+            ax=axes[i],
+            bins=(100, 100),
+            plot_values=False,
+            log_color_scale=False,
+        )
 
     plt.show()
 
 
-# %%
-plot_histogram_pairs(
-    [
-        (f'dln_exp_log_{duration}', f'dln_exp_no_vol_log_{duration}')
-        for duration in durations
-    ]
+test_log_scale_value()
+
+# %% tags=[] jupyter={"source_hidden": true}
+fig, ax = plt.subplots(figsize=(5, 5))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'ad_72d',
+    'dln_log_72d',
+    ax=ax,
+    bins=(100, 100),
+    plot_values=False,
+    log_color_scale=True,
 )
 
-# %%
-plot_histogram_pairs(
-    [
-        (f'dln_exp_{duration}', f'dln_exp_no_vol_{duration}')
-        for duration in durations
-    ]
-)
+plt.show()
 
-# %%
-plot_histogram_pairs(
-    [
-        (f'indicator_log_{duration}', f'ad_exp_log_{duration}')
-        for duration in durations
-    ]
-)
-
-# %%
-plot_histogram_pairs(
-    [(f'indicator_{duration}', f'ad_exp_{duration}') for duration in durations]
-)
-
-# %%
+# %% tags=[] jupyter={"source_hidden": true}
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 
@@ -249,13 +260,13 @@ import pandas as pd
 import seaborn as sns
 
 
-def plot_histograms(*, indicator_field: str, profit_field: str) -> None:
+def plot_histograms(*, adv_field: str, profit_field: str) -> None:
     delay_to_Xy_1d = {
         delay: separate_features_1d(
             delay=delay,
             dt_from=None,
             dt_to=None,
-            indicator_field=indicator_field,
+            adv_field=adv_field,
             profit_field=profit_field,
         )
         for delay, df in delay_to_df.items()
@@ -297,4 +308,4 @@ def plot_histograms(*, indicator_field: str, profit_field: str) -> None:
     plt.show()
 
 
-plot_histograms(indicator_field='indicator', profit_field='profit')
+plot_histograms(adv_field='indicator', profit_field='profit')
