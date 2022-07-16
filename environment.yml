@@ -15,6 +15,7 @@ dependencies:
   - pip=*
   - pip:
       - brunette==0.2.0
+  - pyarrow=*
   - pytest=*
   - python-language-server[all]=0.36.2
   - scikit-learn=*
