@@ -140,7 +140,7 @@ def print_column(txt: str, i: int, col_to_lines) -> None:
 #
 # it confidently repeats
 
-# %% jupyter={"outputs_hidden": true} tags=[]
+# %% jupyter={"outputs_hidden": true, "source_hidden": true} tags=[]
 for min_val, max_val in (
     (-0.30, 0.15),
     (-0.30, 0.25),
@@ -167,6 +167,128 @@ for min_val, max_val in (
     )
     print()
 
+
+# %% [markdown]
+# # `dln_log_3d` x `dln_log_72d` hyperbolic score
+
+# %%
+def sim_range():  # type: ignore[no-redef]
+    min_val = 0.20
+
+    def _get_score(  # type: ignore[no-redef]
+        df: pd.DataFrame
+    ) -> np.ndarray:
+        i1 = df['dln_log_3d'] / 0.7
+        i2 = df['dln_log_72d'] / 0.5
+        return (i2 ** 2 - i1 ** 2) > min_val
+
+    sim(_get_score, title=f'{min_val:.2f} -- ***')
+
+
+sim_range()
+
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+def sim_ranges():  # type: ignore[no-redef]
+    values = np.arange(-1, 1, 0.1)
+    for min_val, max_val in zip(values, values[1:]):
+        def _get_score(  # type: ignore[no-redef]
+            df: pd.DataFrame
+        ) -> np.ndarray:
+            i1 = df['dln_log_3d'] / 0.7
+            i2 = df['dln_log_72d'] / 0.5
+            return (i2 ** 2 - i1 ** 2).between(min_val, max_val)
+
+        sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+        print()
+
+
+sim_ranges()
+
+
+# %% [markdown]
+# # `dln_log_3d` x `dln_log_72d` hyperbolic score adjusted
+
+# %%
+def sim_range():  # type: ignore[no-redef]
+    min_val = 0.3
+
+    def _get_score(  # type: ignore[no-redef]
+        df: pd.DataFrame
+    ) -> np.ndarray:
+        i1 = df['dln_log_3d'] / 0.7
+        i2 = df['dln_log_72d'] / 0.5
+        x = i2 - i1
+        y = 0.78 * i2 + 0.22 * i1
+        return (x * y) > min_val
+
+    sim(_get_score, title=f'{min_val:.2f} -- ***')
+
+
+sim_range()
+
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+def sim_ranges():  # type: ignore[no-redef]
+    values = np.arange(-1, 1, 0.1)
+    for min_val, max_val in zip(values, values[1:]):
+        def _get_score(  # type: ignore[no-redef]
+            df: pd.DataFrame
+        ) -> np.ndarray:
+            i1 = df['dln_log_3d'] / 0.7
+            i2 = df['dln_log_72d'] / 0.5
+            x = i2 - i1
+            y = 0.78 * i2 + 0.22 * i1
+            return (x * y).between(min_val, max_val)
+
+        sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+        print()
+
+
+sim_ranges()
+
+
+# %% [markdown]
+# # `dln_log_3d` x `dln_log_24d` hyperbolic score
+
+# %%
+def sim_range():  # type: ignore[no-redef]
+    min_val = 0.024
+
+    def _get_score(  # type: ignore[no-redef]
+        df: pd.DataFrame
+    ) -> np.ndarray:
+        i1 = df['dln_log_3d'] / 0.7
+        i2 = df['dln_log_24d'] / 0.7
+        x = 0.45 * i2 - 0.55 * i1
+        y = 0.45 * i2 + 0.55 * i1
+        return (x * y) > min_val
+
+    sim(_get_score, title=f'{min_val:.2f} -- ***')
+
+
+sim_range()
+
+
+# %%
+def sim_ranges():  # type: ignore[no-redef]
+    values = np.arange(-1, 1, 0.1)
+    for min_val, max_val in zip(values, values[1:]):
+        def _get_score(  # type: ignore[no-redef]
+            df: pd.DataFrame
+        ) -> np.ndarray:
+            i1 = df['dln_log_3d'] / 0.7
+            i2 = df['dln_log_24d'] / 0.7
+            x = 0.45 * i2 - 0.55 * i1
+            y = 0.45 * i2 + 0.55 * i1
+            return (x * y).between(min_val, max_val)
+
+        sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
+        print()
+
+
+sim_ranges()
+
 # %% [markdown]
 # ## Narrowing down of long indicator range `dln_exp_no_vol_log_24d`
 #
@@ -184,13 +306,14 @@ for min_val, max_val in (
 for min_val, max_val in (
     (-0.30, 0.15),
     (-0.30, 0.25),
+    (-0.35, 0.25),
     (-0.40, 0.30),
     (-0.45, 0.45),
 ):
 
     def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
-        x = df['dln_exp_no_vol_log_3d']
-        y = df['dln_exp_no_vol_log_24d']
+        x = df['dln_log_3d']
+        y = df['dln_log_24d']
         slope_bin = 0.5 / 8  #
         bin_x = 0.2
         bin_y = 0.2
