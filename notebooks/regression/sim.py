@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %%
+# %% jupyter={"source_hidden": true} tags=[]
 from __future__ import annotations
 
 from collections import defaultdict
@@ -135,41 +135,28 @@ def print_column(txt: str, i: int, col_to_lines) -> None:
     col_to_lines[i].append(txt)
 
 
-# %% [markdown]
-# ## Validate high profit indicator ranges on 2022 stock history
-#
-# it confidently repeats
-
-# %% jupyter={"outputs_hidden": true, "source_hidden": true} tags=[]
-for min_val, max_val in (
-    (-0.30, 0.15),
-    (-0.30, 0.25),
-    (-0.40, 0.30),
-    (-0.45, 0.45),
-):
-
-    def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
-        x = df['dln_exp_no_vol_log_3d']
-        y = df['dln_exp_no_vol_log_24d']
-        slope_bin = 0.5 / 8  #
-        bin_x = 0.2
-        bin_y = 0.2
-        min_x = -0.8
-        score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
-            min_val, max_val
-        ) * x.between(-0.50, 0.50).astype('int')
-        return score
-
-    sim(
-        _get_score,
-        title=f'{min_val:.2f} -- {max_val:.2f}',
-        use_validation_df=True,
-    )
-    print()
-
-
-# %% [markdown]
+# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
 # # `dln_log_3d` x `dln_log_72d` hyperbolic score
+
+# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
+# ## Validate on data from 2022
+
+# %%
+def sim_range():  # type: ignore[no-redef]
+    min_val = 0.20
+
+    def _get_score(  # type: ignore[no-redef]
+        df: pd.DataFrame
+    ) -> np.ndarray:
+        i1 = df['dln_log_3d'] / 0.7
+        i2 = df['dln_log_72d'] / 0.5
+        return (i2 ** 2 - i1 ** 2) > min_val
+
+    sim(_get_score, title=f'{min_val:.2f} -- ***', use_validation_df=True)
+
+
+sim_range()
+
 
 # %%
 def sim_range():  # type: ignore[no-redef]
@@ -206,7 +193,7 @@ def sim_ranges():  # type: ignore[no-redef]
 sim_ranges()
 
 
-# %% [markdown]
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
 # # `dln_log_3d` x `dln_log_72d` hyperbolic score adjusted
 
 # %%
@@ -248,7 +235,7 @@ def sim_ranges():  # type: ignore[no-redef]
 sim_ranges()
 
 
-# %% [markdown]
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
 # # `dln_log_3d` x `dln_log_24d` hyperbolic score
 
 # %%
@@ -326,9 +313,44 @@ for min_val, max_val in (
     sim(_get_score, title=f'{min_val:.2f} -- {max_val:.2f}')
     print()
 
+# %% [markdown] tags=[]
+# # `dln_log_3d` x `dln_log_24d` H-like score
 
-# %% [markdown]
-# ## Slice short indicator `dln_exp_no_vol_log_3d`
+# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
+# ## Validate high profit indicator ranges on 2022 stock history
+#
+# it confidently repeats
+
+# %% jupyter={"outputs_hidden": true} tags=[]
+for min_val, max_val in (
+    (-0.30, 0.15),
+    (-0.30, 0.25),
+    (-0.40, 0.30),
+    (-0.45, 0.45),
+):
+
+    def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
+        x = df['dln_exp_no_vol_log_3d']
+        y = df['dln_exp_no_vol_log_24d']
+        slope_bin = 0.5 / 8  #
+        bin_x = 0.2
+        bin_y = 0.2
+        min_x = -0.8
+        score = ~(y - (bin_y / bin_x * slope_bin) * (x - min_x)).between(
+            min_val, max_val
+        ) * x.between(-0.50, 0.50).astype('int')
+        return score
+
+    sim(
+        _get_score,
+        title=f'{min_val:.2f} -- {max_val:.2f}',
+        use_validation_df=True,
+    )
+    print()
+
+
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
+# ## Slice indicator `dln_log_3d`
 
 # %% tags=[]
 def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
@@ -358,7 +380,7 @@ def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
 sim_ranges(-0.8, 0.8, 0.1)
 
 
-# %% [markdown]
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
 # ## Maximal 180d profit
 #
 # since extreme values of long indicator have high 180d income and low /
@@ -381,10 +403,8 @@ def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
 sim(_get_score, title=f'{-0.3:.2f} -- {0.2:.2f}')
 
 
-# %%
-
-# %% [markdown]
-# ## Slice long indicator `dln_exp_no_vol_log_24d`
+# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
+# ## Slice `dln_log_24d`
 
 # %% jupyter={"outputs_hidden": true} tags=[]
 def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
@@ -410,8 +430,8 @@ def sim_ranges(val_min, val_max, step):  # type: ignore[no-redef]
 sim_ranges(-0.9, 0.9, 0.1)
 
 
-# %% [markdown]
-# ## dln_exp_no_vol_log_72d
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
+# # dln_exp_no_vol_log_72d
 #
 # higher frequency of high 30d profit
 #
@@ -450,8 +470,8 @@ for min_val, max_val in (
     print()
 
 
-# %% [markdown]
-# ## Example of treating desirability as probability multiplier
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
+# # Example of treating desirability as probability multiplier
 #
 # Since we buy more stock with hihger score, it's logical these stocks will
 # have bigger impact on profits.
