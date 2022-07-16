@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %%
+# %% pycharm={"name": "#%%\n"} tags=[] jupyter={"source_hidden": true}
 from __future__ import annotations
 
 from datetime import datetime
@@ -43,8 +43,6 @@ def separate_features_2d(
         df['w'].values,
     )
 
-
-# %% pycharm={"name": "#%%\n"}
 # # %%timeit -n1 -r1
 
 from datetime import datetime
@@ -262,10 +260,10 @@ def plot_facet_2d(use_validation_df: bool = False, **kwargs):
 
 # %% jupyter={"outputs_hidden": true} tags=[]
 plot_facet_2d(
-    indicator_1_field='ad_exp_72d',
+    indicator_1_field='ad_72d',
     min_x0=-0.5,
     max_x0=+0.6,
-    indicator_2_field='dln_exp_no_vol_log_72d',
+    indicator_2_field='dln_log_72d',
     min_x1=-0.60,
     max_x1=+0.60,
     alpha_min=0.1,
@@ -283,14 +281,37 @@ plot_facet_2d(
     log_alpha_scale=True,
 )
 
+# %% tags=[]
+plot_facet_2d(
+    indicator_1_field='dln_log_3d',
+    min_x0=-0.70,
+    max_x0=+0.70,
+    indicator_2_field='dln_log_72d',
+    min_x1=-0.50,
+    max_x1=+0.50,
+    alpha_min=0.05,
+    v_min_color=-1.5,
+    v_max_color=+1.5,
+    levels=(
+        *np.linspace(-6.0, -2.8, num=5),
+        *np.linspace(-2.0, -0.4, num=5),
+        *(-0.2, -0.1, 0, +0.1, +0.2),
+        *np.linspace(+0.4, +2.0, num=5),
+        *np.linspace(+2.8, +6.0, num=5),
+    ),
+    regression_bins=(200, 200, 1),
+    radius=0.04,
+    log_alpha_scale=True,
+)
+
 # %%
 plot_facet_2d(
-    indicator_1_field='dln_exp_no_vol_log_3d',
-    min_x0=-0.80,
-    max_x0=+0.80,
-    indicator_2_field='dln_exp_no_vol_log_72d',
-    min_x1=-0.80,
-    max_x1=+0.80,
+    indicator_1_field='dln_log_3d',
+    min_x0=-0.70,
+    max_x0=+0.70,
+    indicator_2_field='dln_log_24d',
+    min_x1=-0.6,
+    max_x1=+0.6,
     alpha_min=0.1,
     v_min_color=-1.5,
     v_max_color=+1.5,
@@ -308,13 +329,12 @@ plot_facet_2d(
 
 # %%
 plot_facet_2d(
-    indicator_1_field='dln_exp_no_vol_log_3d',
-    min_x0=-0.80,
-    max_x0=+0.80,
-    indicator_2_field='dln_exp_no_vol_log_24d',
-    min_x1=-0.80,
-    max_x1=+0.80,
-    alpha_min=0.1,
+    indicator_1_field='dln_log_3d',
+    min_x0=-0.70,
+    max_x0=+0.70,
+    indicator_2_field='dln_log_24d',
+    min_x1=-0.70,
+    max_x1=+0.70,
     v_min_color=-1.5,
     v_max_color=+1.5,
     levels=(
@@ -326,15 +346,16 @@ plot_facet_2d(
     ),
     regression_bins=(200, 200, 1),
     radius=0.04,
-    log_alpha_scale=True,
+    alpha_min=0.02,
+    log_alpha_scale=False,
 )
 
 # %%
 plot_facet_2d(
-    indicator_1_field='dln_exp_log_3d',
+    indicator_1_field='dlnv_3d',
     min_x0=-0.8,
     max_x0=+0.8,
-    indicator_2_field='dln_exp_no_vol_log_24d',
+    indicator_2_field='dln_log_24d',
     min_x1=-0.8,
     max_x1=+0.8,
     alpha_min=0.1,
@@ -357,7 +378,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.04,
     max_x0=+0.04,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.02,
     max_x1=+0.02,
     alpha_min=0.1,
@@ -380,7 +401,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.025,
     max_x0=+0.025,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.01,
     max_x1=+0.01,
     alpha_min=0.1,
@@ -402,7 +423,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
     max_x0=+0.1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.04,
     max_x1=+0.04,
     radius=0.005,
@@ -422,7 +443,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
     max_x0=+0.1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.04,
     max_x1=+0.04,
     radius=0.012,
@@ -434,7 +455,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
     max_x0=+0.1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.04,
     max_x1=+0.04,
     radius=0.012,
@@ -445,7 +466,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_3d',
     min_x0=-0.1,
     max_x0=+0.1,
-    indicator_2_field='dln_exp_no_vol_72d',
+    indicator_2_field='dln_72d',
     min_x1=-0.0125,
     max_x1=+0.0100,
     radius=0.010,
@@ -454,7 +475,7 @@ plot_facet_2d(
 # %% jupyter={"outputs_hidden": true} tags=[]
 plot_facet_2d(
     indicator_1_field='dln_exp_24d',
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x0=-0.1,
     max_x0=+0.1,
     min_x1=-0.03,
@@ -467,7 +488,7 @@ plot_facet_2d(
     indicator_1_field='dln_exp_4h',
     min_x0=-0.1,
     max_x0=+0.1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.03,
     max_x1=+0.03,
     radius=0.010,
@@ -475,33 +496,23 @@ plot_facet_2d(
 
 # %% pycharm={"name": "#%%\n"} tags=[]
 plot_facet_2d(
-    indicator_1_field='indicator_24d',
-    indicator_2_field='ad_exp_24d',
+    indicator_1_field='adv_24d',
+    indicator_2_field='ad_24d',
 )
 
 # %%
 plot_facet_2d(
-    indicator_1_field='indicator_24d',
+    indicator_1_field='adv_24d',
     min_x0=-1,
     max_x0=+1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_24d',
     min_x1=-0.15,
     max_x1=+0.25,
 )
 
 # %%
 plot_facet_2d(
-    indicator_1_field='indicator_24d',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_exp_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='ad_exp_24d',
+    indicator_1_field='adv_24d',
     min_x0=-1,
     max_x0=+1,
     indicator_2_field='dln_exp_24d',
@@ -511,17 +522,27 @@ plot_facet_2d(
 
 # %%
 plot_facet_2d(
-    indicator_1_field='indicator_4h',
+    indicator_1_field='ad_24d',
     min_x0=-1,
     max_x0=+1,
-    indicator_2_field='dln_exp_no_vol_24d',
+    indicator_2_field='dln_exp_24d',
     min_x1=-0.15,
     max_x1=+0.25,
 )
 
 # %%
 plot_facet_2d(
-    indicator_1_field='indicator_4h',
+    indicator_1_field='adv_4h',
+    min_x0=-1,
+    max_x0=+1,
+    indicator_2_field='dln_24d',
+    min_x1=-0.15,
+    max_x1=+0.25,
+)
+
+# %%
+plot_facet_2d(
+    indicator_1_field='adv_4h',
     min_x0=-1,
     max_x0=+1,
     indicator_2_field='dln_exp_24d',
