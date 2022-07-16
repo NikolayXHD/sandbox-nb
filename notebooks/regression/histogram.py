@@ -116,6 +116,22 @@ def plot_histogram_pairs(field_grps, **kwargs):
 
 
 # %%
+fig, ax = plt.subplots(figsize=(20, 10))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'hyperbolic_score',
+    'profit_in_currency',
+    ax=ax,
+    bins=(200, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
 plot_histogram_pairs(
     [
         (f'dlnv_log_{duration}', f'dln_log_{duration}')
@@ -169,7 +185,7 @@ for i, ignore_weight in enumerate((True, False)):
     )
 plt.show()
 
-# %% tags=[] jupyter={"source_hidden": true}
+# %% tags=[]
 fig, ax = plt.subplots(figsize=(5, 5))
 plot_2d_hist(
     delay_to_df[7],
@@ -235,7 +251,7 @@ def test_log_scale_value():
 
 test_log_scale_value()
 
-# %% tags=[] jupyter={"source_hidden": true}
+# %% tags=[]
 fig, ax = plt.subplots(figsize=(5, 5))
 
 plot_2d_hist(
@@ -251,7 +267,7 @@ plot_2d_hist(
 
 plt.show()
 
-# %% tags=[] jupyter={"source_hidden": true}
+# %% tags=[]
 # # %%timeit -n1 -r1
 # 37.7 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 

@@ -75,8 +75,8 @@ def calculate_log_indicators(
     }
 
 
-def append_log_indicators(df: pd.DataFrame):
-    return df.assign(
+def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.assign(
         **{
             f'{indicator}_log_{duration}': log_scale_value(
                 df[f'{indicator}_{duration}'], scale
@@ -88,6 +88,11 @@ def append_log_indicators(df: pd.DataFrame):
             if f'{indicator}_{duration}' in df
         }
     )
+    i1 = df['dln_log_3d'] / 0.7 * 0.55
+    i2 = df['dln_log_24d'] / 0.7 * 0.45
+    hyperbolic_score = i2 ** 2 - i1 ** 2
+    df = df.assign(**{'hyperbolic_score': hyperbolic_score})
+    return df
 
 
 def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
