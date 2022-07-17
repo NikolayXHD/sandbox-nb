@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %% pycharm={"name": "#%%\n"} tags=[] jupyter={"source_hidden": true}
+# %% pycharm={"name": "#%%\n"} tags=[]
 from __future__ import annotations
 
 from datetime import datetime
@@ -93,7 +93,7 @@ def plot_model_2d(
     max_x0: float,
     min_x1: float,
     max_x1: float,
-    alpha_min: float = 1,
+    alpha_min: float = 0.05,
     v_min_color: float = -5,
     v_max_color: float = +5,
     v_min_line: float = -10,
@@ -104,6 +104,7 @@ def plot_model_2d(
     log_alpha_scale=True,
 ):
     if levels is None:
+        v_num_line = int((v_max_line - v_min_line) // v_step_line)
         levels = np.linspace(v_min_line, v_max_line, num=v_num_line)
 
     hist, x_edges, y_edges = np.histogram2d(
@@ -138,7 +139,7 @@ def plot_model_2d(
     alphas = alphas.T
 
     ax.imshow(
-        Z * 0,
+        np.zeros_like(Z),
         aspect=(max_x0 - min_x0) / (max_x1 - min_x1),
         extent=(min_x0, max_x0, min_x1, max_x1),
         cmap='gist_gray',
@@ -257,296 +258,3 @@ def plot_facet_2d(use_validation_df: bool = False, **kwargs):
             use_validation_df=use_validation_df,
             **kwargs,
         )
-
-
-# %% jupyter={"outputs_hidden": true} tags=[]
-plot_facet_2d(
-    indicator_1_field='ad_72d',
-    min_x0=-0.5,
-    max_x0=+0.6,
-    indicator_2_field='dln_log_72d',
-    min_x1=-0.60,
-    max_x1=+0.60,
-    alpha_min=0.1,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.04,
-    log_alpha_scale=True,
-)
-
-# %% tags=[]
-plot_facet_2d(
-    indicator_1_field='dln_log_3d',
-    min_x0=-0.70,
-    max_x0=+0.70,
-    indicator_2_field='dln_log_72d',
-    min_x1=-0.50,
-    max_x1=+0.50,
-    alpha_min=0.05,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.04,
-    log_alpha_scale=True,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dln_log_3d',
-    min_x0=-0.70,
-    max_x0=+0.70,
-    indicator_2_field='dln_log_24d',
-    min_x1=-0.6,
-    max_x1=+0.6,
-    alpha_min=0.1,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.04,
-    log_alpha_scale=True,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dln_log_3d',
-    min_x0=-0.70,
-    max_x0=+0.70,
-    indicator_2_field='dln_log_24d',
-    min_x1=-0.70,
-    max_x1=+0.70,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.04,
-    alpha_min=0.02,
-    log_alpha_scale=False,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dlnv_3d',
-    min_x0=-0.8,
-    max_x0=+0.8,
-    indicator_2_field='dln_log_24d',
-    min_x1=-0.8,
-    max_x1=+0.8,
-    alpha_min=0.1,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.02,
-    log_alpha_scale=True,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.04,
-    max_x0=+0.04,
-    indicator_2_field='dln_24d',
-    min_x1=-0.02,
-    max_x1=+0.02,
-    alpha_min=0.1,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(200, 200, 1),
-    radius=0.001,
-    log_alpha_scale=True,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.025,
-    max_x0=+0.025,
-    indicator_2_field='dln_24d',
-    min_x1=-0.01,
-    max_x1=+0.01,
-    alpha_min=0.1,
-    v_min_color=-1.5,
-    v_max_color=+1.5,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-    regression_bins=(120, 120, 1),
-    radius=0.002,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.04,
-    max_x1=+0.04,
-    radius=0.005,
-    alpha_min=0.1,
-    v_step_line=0.25,
-    levels=(
-        *np.linspace(-6.0, -2.8, num=5),
-        *np.linspace(-2.0, -0.4, num=5),
-        *(-0.2, -0.1, 0, +0.1, +0.2),
-        *np.linspace(+0.4, +2.0, num=5),
-        *np.linspace(+2.8, +6.0, num=5),
-    ),
-)
-
-# %% tags=[] jupyter={"outputs_hidden": true}
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.04,
-    max_x1=+0.04,
-    radius=0.012,
-    use_validation_df=True,
-)
-
-# %% tags=[] jupyter={"outputs_hidden": true}
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.04,
-    max_x1=+0.04,
-    radius=0.012,
-)
-
-# %% tags=[] jupyter={"outputs_hidden": true}
-plot_facet_2d(
-    indicator_1_field='dln_exp_3d',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    indicator_2_field='dln_72d',
-    min_x1=-0.0125,
-    max_x1=+0.0100,
-    radius=0.010,
-)
-
-# %% jupyter={"outputs_hidden": true} tags=[]
-plot_facet_2d(
-    indicator_1_field='dln_exp_24d',
-    indicator_2_field='dln_24d',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    min_x1=-0.03,
-    max_x1=+0.03,
-    radius=0.007,
-)
-
-# %% jupyter={"outputs_hidden": true} tags=[]
-plot_facet_2d(
-    indicator_1_field='dln_exp_4h',
-    min_x0=-0.1,
-    max_x0=+0.1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.03,
-    max_x1=+0.03,
-    radius=0.010,
-)
-
-# %% pycharm={"name": "#%%\n"} tags=[]
-plot_facet_2d(
-    indicator_1_field='adv_24d',
-    indicator_2_field='ad_24d',
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='adv_24d',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='adv_24d',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_exp_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='ad_24d',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_exp_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='adv_4h',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
-
-# %%
-plot_facet_2d(
-    indicator_1_field='adv_4h',
-    min_x0=-1,
-    max_x0=+1,
-    indicator_2_field='dln_exp_24d',
-    min_x1=-0.15,
-    max_x1=+0.25,
-)
