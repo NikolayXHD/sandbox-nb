@@ -25,15 +25,9 @@ import seaborn as sns
 
 # %% tags=[]
 def plot_score():
-    i2, i1 = np.mgrid[-0.7:0.7:50j, -0.7:0.7:50j]
+    i2, i1 = np.mgrid[-0.6:0.6:50j, -0.7:0.7:50j]
 
-    j1 = i1 / 0.7
-    j2 = i2 / 0.7
-
-    x = 0.45 * j2 - 0.55 * j1
-    y = 0.45 * j2 + 0.55 * j1
-
-    score = x * y
+    score = (i2 / 0.6) ** 2 - (i1 / 0.7) ** 2
 
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.grid(False)
@@ -42,15 +36,15 @@ def plot_score():
         i2,
         score,
         cmap='RdBu',
-        vmin=-0.3,
-        vmax=+0.3,
+        vmin=-1,
+        vmax=+1,
     )
     ax.grid(True)
 
     cs = ax.contour(
         score,
-        extent=(-0.7, +0.7, -0.7, +0.7),
-        levels=np.arange(-1, 1, 0.1),
+        extent=(-0.7, +0.7, -0.6, +0.6),
+        levels=(-0.075, 0, 0.075, 0.100, 0.125, 0.225),
         colors='black',
         linewidths=1.5,
     )
@@ -63,7 +57,7 @@ def plot_score():
 plot_score()
 
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
+# %% [markdown] tags=[]
 # # H-like score
 
 # %%

@@ -88,8 +88,8 @@ def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
             if f'{indicator}_{duration}' in df
         }
     )
-    i1 = df['dln_log_3d'] / 0.7 * 0.55
-    i2 = df['dln_log_24d'] / 0.7 * 0.45
+    i1 = df['dln_log_3d'] / 0.7
+    i2 = df['dln_log_24d'] / 0.6
     hyperbolic_score = i2 ** 2 - i1 ** 2
     df = df.assign(**{'hyperbolic_score': hyperbolic_score})
     return df
