@@ -1,5 +1,16 @@
 # %% [markdown]
 # # `dln_log_3d` x `dln_log_24d` hyperbolic score
+#
+# <font color=orange size=l>NOTE!</font>
+#
+# Comparing average score adjusted by day total weight, we can see that high
+# indicator values produce consistenly lower profit after weight ajustment.
+#
+# What it could mean, is that those stocks, that keep positive indicator value
+# for longer time, produce consistently higher profit
+#
+#
+#
 
 # %% [markdown]
 # ## chosen range

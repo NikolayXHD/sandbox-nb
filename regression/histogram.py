@@ -9,6 +9,7 @@ from sklearn import utils
 from sklearn.preprocessing import FunctionTransformer
 
 from .memory import control_output
+from .weight import weighted_avg
 
 
 class Histogram2dRegressionWrapper:
@@ -161,7 +162,7 @@ def create_histogram(
         ).agg(
             **{
                 f'X_{feat_i}': pd.NamedAgg(
-                    column=f'X_{feat_i}', aggfunc=_weighted_avg(w)
+                    column=f'X_{feat_i}', aggfunc=weighted_avg(w)
                 )
                 for feat_i in range(num_features)
             },
@@ -213,7 +214,7 @@ def create_histogram(
                     )
                     for feat_i in range(num_features)
                 },
-                'y': pd.NamedAgg(column='y', aggfunc=_weighted_avg(w)),
+                'y': pd.NamedAgg(column='y', aggfunc=weighted_avg(w)),
                 'w': pd.NamedAgg(column='w', aggfunc='sum'),
             }
         )
@@ -229,11 +230,11 @@ def create_histogram(
             **{
                 **{
                     f'X_{feat_i}': pd.NamedAgg(
-                        column=f'X_{feat_i}', aggfunc=_weighted_avg(w)
+                        column=f'X_{feat_i}', aggfunc=weighted_avg(w)
                     )
                     for feat_i in range(num_features)
                 },
-                'y': pd.NamedAgg(column='y', aggfunc=_weighted_avg(w)),
+                'y': pd.NamedAgg(column='y', aggfunc=weighted_avg(w)),
                 'w': pd.NamedAgg(column='w', aggfunc='sum'),
             }
         )
@@ -244,13 +245,6 @@ def create_histogram(
 
     assert X_d.shape[0] == y_d.shape[0] == w.shape[0]
     return X_d, y_d, w
-
-
-def _weighted_avg(w: pd.Series):
-    def _agg(s):
-        return np.average(s, weights=w[s.index])
-
-    return _agg
 
 
 __all__ = ['Histogram2dRegressionWrapper', 'create_histogram']

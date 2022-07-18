@@ -22,6 +22,9 @@ import typing
 import numpy as np
 import pandas as pd
 
+from regression.balance import get_weight_total_per_day
+from regression.load import filter_df_by_dates
+
 
 def sim(
     get_score: typing.Callable[[pd.DataFrame], np.ndarray],
@@ -50,19 +53,9 @@ def sim(
     df_pivot = df_txt.pivot(
         index=['period', 'freq'], columns=['d', 'type']
     ).droplevel(0, axis=1)
-    # df_pivot.reset_index(inplace=True)
-    # df_pivot.set_index('period', inplace=True)
+
     print (title)
-    with pd.option_context(
-        'display.precision',
-        4,
-        'display.chop_threshold',
-        10 ** -4,
-        'display.max_rows',
-        100,
-        'display.max_columns',
-        100
-    ):
+    with pd.option_context('display.width', 120):
         print(df_pivot)
         print()
 
@@ -83,49 +76,71 @@ def sim_report_df(
     period_to_freq: dict[str, float] = {}
 
     for delay_ix, delay in enumerate(delay_to_df.keys()):
-        for profit_ix, profit_type in enumerate(('rnd', 'avg')):
-            for date_from, date_to in iterate_date_ranges(
-                append_empty_range=True, use_validation_df=use_validation_df
-            ):
-                period = f'{format_date(date_from)} -'
-                periods.append(period)
-
-                delays.append(delay)
-
-                df = get_df(
-                    delay=delay,
-                    date_from=date_from,
-                    date_to=date_to,
-                    use_validation_df=use_validation_df,
+        df_full = get_df(
+            delay=delay,
+            date_from=None,
+            date_to=None,
+            use_validation_df=use_validation_df,
+        )
+        s_score_full = get_score(df_full)
+        df_full = df_full.assign(
+            **{
+                'score': s_score_full,
+                'w_day_total': get_weight_total_per_day(
+                    t=df_full['t'], w=(s_score_full > 0) * df_full['w']
                 )
-                score = get_score(df)
+            }
+        )
+        for date_from, date_to in iterate_date_ranges(
+            append_empty_range=True, use_validation_df=use_validation_df
+        ):
+            period = f'{format_date(date_from)} -'
+            df = filter_df_by_dates(df_full, date_from, date_to)
+            s_score = df['score']
+            s_profits = df[profit_fld]
+            w_day_total = df['w_day_total']
+            s_w = df['w']
+            if delay_ix == 0:
+                # because the data has extra year for validation,
+                # there should be no differences in freq, neutral_verage_w
+                # due to differences in right boundary truncation for different
+                # profit delays
+                freq = (s_score > 0).sum() / len(df)
+                period_to_freq[period] = freq
+            else:
+                freq = period_to_freq[period]
 
-                if delay_ix == 0 and profit_ix == 0:
-                    # because the data has extra year for validation,
-                    # there should be no differences in freq, neutral_verage_w
-                    # due to differences in right boundary truncation for different
-                    # profit delays
-                    freq = (score > 0).sum() / len(df)
-                    period_to_freq[period] = freq
-                else:
-                    freq = period_to_freq[period]
+            for profit_ix, profit_type in enumerate(('rnd', 'avg', 'adj')):
+                periods.append(period)
+                delays.append(delay)
                 freqs.append(freq)
-
                 profit_types.append(profit_type)
-                if (profit_type == 'avg'):
-                    try:
-                        positive_average_w = np.average(
-                            df[profit_fld].values, weights=score * df['w']
-                        )
-                    except ZeroDivisionError:
-                        positive_average_w = None
-                    profits.append(positive_average_w)
-                else:
-                    assert profit_type == 'rnd'
-                    neutral_average_w = np.average(
-                        df[profit_fld].values, weights=df['w']
-                    )
-                    profits.append(neutral_average_w)
+
+                match profit_type:
+                    case 'adj':
+                        try:
+                            positive_average_w = np.average(
+                                s_profits,
+                                weights=(
+                                    s_score * s_w / w_day_total.replace(0, 1)
+                                )
+                            )
+                        except ZeroDivisionError:
+                            positive_average_w = None
+                        profits.append(positive_average_w)
+                    case 'avg':
+                        try:
+                            positive_average_w = np.average(
+                                s_profits, weights=s_score * s_w
+                            )
+                        except ZeroDivisionError:
+                            positive_average_w = None
+                        profits.append(positive_average_w)
+                    case 'rnd':
+                        neutral_average_w = np.average(s_profits, weights=s_w)
+                        profits.append(neutral_average_w)
+                    case _:
+                        assert False, f'Unknown profit type {profit_type}'
 
     df = pd.DataFrame(
         {
