@@ -91,7 +91,7 @@ def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
     i1 = df['dln_log_3d'] / 0.7
     i2 = df['dln_log_24d'] / 0.6
     hyperbolic_score = i2 ** 2 - i1 ** 2
-    df = df.assign(**{'hyperbolic_score': hyperbolic_score})
+    df.loc[:, 'score'] = hyperbolic_score
     return df
 
 
@@ -102,8 +102,8 @@ def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
 def get_df(
     *,
     delay: int,
-    date_from: datetime | None,
-    date_to: datetime | None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     use_validation_df: bool = False,
 ) -> pd.DataFrame:
     delay_to_df_map = (
@@ -161,4 +161,4 @@ delay_to_style = {
 }
 
 # %%
-delay_to_df[7]
+delay_to_df[7].columns
