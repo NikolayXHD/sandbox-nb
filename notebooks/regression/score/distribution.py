@@ -2,25 +2,66 @@
 from __future__ import annotations
 
 import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import numpy as np
+import seaborn as sns
 
-df = get_df(delay=7)
-s_t = df['t'].values.astype('datetime64[s]')
-df = df.assign(
-    **{
-        't_d': s_t.astype('datetime64[D]'), 't_y': s_t.astype('datetime64[Y]')
-    }
-)
-df = df.loc[df['score'] >= 0.225]
-df_agg = df.groupby(['ticker', 't_d'], observed=True).agg(
-    **{
-        't_y': ('t_y', 'first'),
-        'count': ('profit_in_currency', 'count'),
-        'mean': ('profit_in_currency', 'mean'),
-        'sum': ('profit_in_currency', 'sum'),
-    }
-).reset_index()
 
+def get_high_score_distribution(score_min: float, score_max: float) -> pd.DataFrame:
+    assert score_min <= score_max
+
+    df = get_df(delay=7)
+    s_t = df['t'].values.astype('datetime64[s]')
+    df = df.assign(
+        **{
+            't_d': s_t.astype('datetime64[D]'), 't_y': s_t.astype('datetime64[Y]')
+        }
+    )
+    df = df.loc[df['score'].between(score_min, score_max)]
+    df_agg = df.groupby(['ticker', 't_d'], observed=True).agg(
+        **{
+            't_y': ('t_y', 'first'),
+            'count': ('profit_in_currency', 'count'),
+            'mean': ('profit_in_currency', 'mean'),
+            'sum': ('profit_in_currency', 'sum'),
+        }
+    ).reset_index()
+
+    return df_agg
+
+
+def plot_high_score_distribution_df(df_agg: pd.DataFrame) -> None:
+    day_min = df_agg['t_d'].min()
+    day_max = df_agg['t_d'].max()
+    df_agg_cut = df_agg.assign(
+        **{
+            'count_cat': pd.cut(df_agg['count'], 10),
+            't_cat': pd.cut(df_agg['t_d'], 5)
+        }
+    )
+    df_agg_cut.sort_values('t_cat', inplace=True)
+
+    g = sns.FacetGrid(data=df_agg_cut, row='t_cat', height=4, aspect=20/4)
+    g.map(sns.regplot, 'count', 'mean')
+
+    for _, ax in g.axes_dict.items():
+        ax.yaxis.set_minor_locator(MultipleLocator(1.0))
+        ax.grid(which='minor', axis='y', visible=True, linewidth=0.5)
+
+    plt.show()
+
+
+def plot_high_score_distribution(score_min: float, score_max: float) -> None:
+    df = get_high_score_distribution(score_min, score_max)
+    plot_high_score_distribution_df(df)
+
+
+# %% [markdown]
+# ## Plot tables
+
+# %%
+df_agg = get_high_score_distribution(0.225, 1)
 df_agg
 
 # %%
@@ -67,42 +108,17 @@ for range_min, range_max in (
     # display(df_agg_range_days)
     print()
 
-# %%
-from matplotlib import pyplot as plt
-import seaborn as sns
-
-df
-
-fig, ax = plt.subplots(figsize=(25, 6))
-sns.regplot(data=df_agg, x='count', y='mean', ax=ax, order=3)
-plt.show()
+# %% [markdown]
+# ## Plot regplots
 
 # %%
-df_agg_cut = df_agg.assign(
-    **{'count_cat': pd.cut(df_agg['count'], np.arange(0, 1000, 100))}
-)
-
-g = sns.catplot(
-    data=df_agg_cut,
-    x='count_cat',
-    y='mean',
-    row='t_y',
-    kind='box',
-    height=4,
-    aspect=40/8,
-)
-plt.show()
+plot_high_score_distribution(0.125, 0.175)
 
 # %%
-fig, ax = plt.subplots(figsize=(25, 6))
-sns.violinplot(
-    data=df_agg,
-    x=pd.cut(df_agg['count'], np.arange(0, 1000, 50)),
-    y='mean',
-    scale='count',
-    ax=ax,
-)
-plt.show()
+plot_high_score_distribution(0.175, 0.225)
+
+# %%
+plot_high_score_distribution(0.225, 1)
 
 # %% [markdown]
 # # leaders

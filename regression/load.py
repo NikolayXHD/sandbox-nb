@@ -1,71 +1,81 @@
 from __future__ import annotations
 
 from datetime import datetime
-import typing
-
+import itertools
 from pathlib import Path
+import typing
 
 import numpy as np
 import pandas as pd
 
 from .balance import get_w
 
-LEVEL_DIR_PATTERN = 'lvl_?'
-FEATHER_FILE_PATTERN = '*.feather'
 
-
-def build_df(directory: Path, max_list_level: int) -> pd.DataFrame:
+def build_df(
+    directory: Path,
+    max_list_level: int,
+    fields: list[str],
+) -> pd.DataFrame:
     parts: list[pd.DataFrame] = []
     last_msg: str | None = None
 
     directory = directory.resolve()
     print(directory)
 
-    level_subdirs = list(
-        sorted(
-            level_dir
-            for level_dir in directory.glob(LEVEL_DIR_PATTERN)
-            if _parse_level(level_dir) <= max_list_level
+    level_to_tickers = {
+        level: sorted(
+            set(
+                _parse_ticker(f)
+                for f in (directory / 't' / f'lvl_{level}').glob('*.feather')
+            )
         )
-    )
-    tickers = list(
-        sorted(
-            _parse_ticker(f)
-            for level_dir in level_subdirs
-            for f in level_dir.glob(FEATHER_FILE_PATTERN)
-        )
-    )
+        for level in range(1, max_list_level + 1)
+    }
+    tickers = sorted(set(itertools.chain(*level_to_tickers.values())))
+    time_field_requested = 't' in fields
+    if not time_field_requested:
+        # time is required for sorting
+        fields.insert(0, 't')
 
-    for level_dir in level_subdirs:
-        level = _parse_level(level_dir)
-        files = sorted(level_dir.glob(FEATHER_FILE_PATTERN))
-        for i, f in enumerate(files):
+    for lvl, tickers in level_to_tickers.items():
+        for i, ticker in enumerate(tickers):
             if last_msg is not None:
                 print('\r' + ' ' * len(last_msg) + '\r', end='')
-            last_msg = f'{f.name} {i + 1} / {len(files)}'
+            last_msg = f'lvl_{lvl} {ticker} {i + 1} / {len(tickers)}'
             print(last_msg, end='')
-
-            df_specific_ticker = pd.read_feather(f)
-            df_specific_ticker = df_specific_ticker.assign(
-                **{
-                    'ticker': pd.Categorical(
-                        [_parse_ticker(f)] * len(df_specific_ticker),
-                        categories=tickers,
-                    ),
-                    'level': pd.Series(
-                        [level] * len(df_specific_ticker),
-                        dtype=np.byte,
-                    ),
-                }
-            )
-            parts.append(df_specific_ticker)
+            df = pd.DataFrame()
+            for field in fields:
+                if field == 'w':
+                    continue
+                elif field == 'ticker':
+                    ds = pd.Categorical(
+                        [ticker] * len(df), categories=tickers,
+                    )
+                elif field == 'level':
+                    ds = pd.Series(
+                        [lvl] * len(df), dtype=np.byte
+                    )
+                else:
+                    df_field = pd.read_feather(
+                        directory / field / f'lvl_{lvl}' / f'{ticker}.feather'
+                    )
+                    ds = df_field.loc[:, field]
+                if df.shape[1] > 0:
+                    assert len(ds) == len(df)
+                df.loc[:, field] = ds
+            parts.append(df)
     print()
-    df = pd.concat(parts, ignore_index=True)
-    df.sort_values(by=['t'], inplace=True, ignore_index=True)
-    df = df.assign(
-        **{'w': get_w(t=df['t'], ticker=df['ticker'])}
-    )
-    return df
+    df_all_tickers = pd.concat(parts, ignore_index=True)
+    df_all_tickers.sort_values(by=['t'], inplace=True, ignore_index=True)
+    if 'w' in fields:
+        assert 'ticker' in fields
+        df_all_tickers.loc[:, 'w'] = get_w(
+            t=df_all_tickers['t'], ticker=df_all_tickers['ticker']
+        )
+    if not time_field_requested:
+        df_all_tickers.drop('t', axis=1)
+
+    return df_all_tickers
 
 
 def _parse_level(lvl_subdir: Path) -> int:

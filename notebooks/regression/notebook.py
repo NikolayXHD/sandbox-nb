@@ -39,7 +39,13 @@ OUTPUT_STORAGE_PATH = PWD.joinpath(
     '..', '..', '..', 'sandbox', '.storage', 'output'
 )
 
-durations = ('4h', '3d', '24d', '72d')
+DATE_RANGES_VALIDATION = tuple(
+    (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
+    for y in range(2015, 2022)
+)
+DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
+
+
 delay_to_dir = {
     delay: OUTPUT_STORAGE_PATH.joinpath(
         'regression',
@@ -47,56 +53,24 @@ delay_to_dir = {
         'dohodru',
         'rub',
         '2015-07-01--2022-07-01',
-        '_'.join(durations),
-        'market_False',
-        'profit_currency_USD',
-        'adv_True',
-        'ad_True',
-        'dlnv_True',
-        'dln_True',
         f'{delay}d',
     )
     for delay in (7, 30, 180)
 }
 
-delay_to_df_validate_raw = {
-    delay: build_df(path, max_list_level=2)
-    for delay, path in delay_to_dir.items()
-}
+durations = ('3d', '24d', '72d')
+# durations = ('4h', '3d', '24d', '72d')
+indicators = ('dlnv', 'dln')
+# indicators = ['dlnv', 'dln', 'adv', 'ad']
+
+time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
+memory_ = Memory(str(CACHE_STORAGE_PATH), mmap_mode='r', verbose=False)
+delay_to_style = {7: ':', 30: '--', 180: '-'}
 
 
-# %%
-def calculate_log_indicators(
-    delay_to_df: dict[int, pd.DataFrame]
-) -> dict[int, pd.DataFrame]:
-    return {
-        delay: append_log_indicators(df) for delay, df in delay_to_df.items()
-    }
-
-
-def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.assign(
-        **{
-            f'{indicator}_log_{duration}': log_scale_value(
-                df[f'{indicator}_{duration}'], scale
-            )
-            for duration in durations
-            for indicator, scale in zip(
-                ('adv', 'ad', 'dlnv', 'dln'),
-                (3, 3, 1000, 1000),
-            )
-            if f'{indicator}_{duration}' in df
-        }
-    )
-    i1 = df['dln_log_3d'] / 0.7
-    i2 = df['dln_log_24d'] / 0.6
-    hyperbolic_score = i2 ** 2 - i1 ** 2
-    df.loc[:, 'score'] = hyperbolic_score
-    return df
-
-
-def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
-    return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
+def update_delay_to_df():
+    for delay, df in delay_to_df_validate.items():
+        delay_to_df[delay] = filter_df_by_dates(df, None, DATE_RANGES[-1][1])
 
 
 def get_df(
@@ -133,32 +107,59 @@ def format_date(d: datetime | None) -> str:
 # Full dataset, including most recent year.
 # Never use it to find regularities in data, rather use it to
 # validate the findings
-delay_to_df_validate = calculate_log_indicators(delay_to_df_validate_raw)
-
-DATE_RANGES_VALIDATION = tuple(
-    (datetime(y, 6, 1, 0, 0), datetime(y + 1, 6, 1, 0, 0))
-    for y in range(2015, 2022)
-)
-DATE_RANGES = DATE_RANGES_VALIDATION[:-1]
-
-delay_to_df = {
-    delay: filter_df_by_dates(df, None, DATE_RANGES[-1][1])
-    for delay, df in delay_to_df_validate.items()
+delay_to_df_validate = {
+    delay: build_df(
+        path,
+        max_list_level=2,
+        fields=[
+            't',
+            'ticker',
+            'profit_in_currency',
+            'w',
+            *(
+                f'{indicator}_{duration}'
+                for indicator in indicators
+                for duration in durations
+            ),
+        ],
+    )
+    for delay, path in delay_to_dir.items()
 }
 
-time_series_split = model_selection.TimeSeriesSplit(n_splits=3)
+delay_to_df: dict[int, pd.DataFrame] = {}
+update_delay_to_df()
 
-memory_ = Memory(
-    str(CACHE_STORAGE_PATH),
-    mmap_mode='r',
-    verbose=False,
-)
-
-delay_to_style = {
-    7: ':',
-    30: '--',
-    180: '-',
-}
 
 # %%
-delay_to_df[7].columns
+def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    for duration in durations:
+        for indicator, scale in zip(
+            ('adv', 'ad', 'dlnv', 'dln'), (3, 3, 1000, 1000)
+        ):
+            if f'{indicator}_{duration}' in df:
+                df.loc[:, f'{indicator}_log_{duration}'] = log_scale_value(
+                    df[f'{indicator}_{duration}'], scale
+                )
+                df.drop(f'{indicator}_{duration}', axis=1)
+    # i1 = df['dln_log_3d'] / 0.7
+    # i2 = df['dln_log_24d'] / 0.6
+    # hyperbolic_score = i2 ** 2 - i1 ** 2
+    # df.loc[:, 'score'] = hyperbolic_score
+    return df
+
+
+def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
+    return np.sign(values) * np.log1p(scale * np.abs(values)) / np.log1p(scale)
+
+
+# Full dataset, including most recent year.
+# Never use it to find regularities in data, rather use it to
+# validate the findings
+for df in delay_to_df_validate.values():
+    append_log_indicators(df)
+update_delay_to_df()
+
+# %%
+
+# %%
+delay_to_df[7]
