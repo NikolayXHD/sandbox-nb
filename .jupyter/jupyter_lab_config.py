@@ -853,7 +853,7 @@
 
 ## The kernel manager class to use.
 #  Default: 'jupyter_server.services.kernels.kernelmanager.MappingKernelManager'
-# c.ServerApp.kernel_manager_class = 'jupyter_server.services.kernels.kernelmanager.MappingKernelManager'
+c.ServerApp.kernel_manager_class = 'infrastructure.custom_kernel_manager.CustomKernelManager'
 
 ## The kernel spec manager class to use. Should be a subclass of
 #  `jupyter_client.kernelspec.KernelSpecManager`.
