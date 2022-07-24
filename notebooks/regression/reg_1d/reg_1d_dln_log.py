@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %%
+# %% jupyter={"outputs_hidden": true} tags=[]
 plot_facet_1d(
     indicator_field='dlnv_log_4h',
     min_x=-0.75,
@@ -21,7 +21,7 @@ plot_facet_1d(
     regression_bins=(100, 1),
 )
 
-# %%
+# %% jupyter={"outputs_hidden": true} tags=[]
 plot_facet_1d(
     indicator_field='dln_log_4h',
     min_x=-0.75,
