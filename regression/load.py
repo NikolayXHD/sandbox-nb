@@ -49,12 +49,11 @@ def build_df(
                     continue
                 elif field == 'ticker':
                     ds = pd.Categorical(
-                        [ticker] * len(df), categories=tickers,
+                        [ticker] * len(df),
+                        categories=tickers,
                     )
                 elif field == 'level':
-                    ds = pd.Series(
-                        [lvl] * len(df), dtype=np.byte
-                    )
+                    ds = pd.Series([lvl] * len(df), dtype=np.byte)
                 else:
                     df_field = pd.read_feather(
                         directory / field / f'lvl_{lvl}' / f'{ticker}.feather'
@@ -108,7 +107,7 @@ def filter_df_by_dates(
     )
     assert isinstance(index_t_from, typing.SupportsInt), str(index_t_from)
     assert isinstance(index_t_to, typing.SupportsInt), str(index_t_to)
-    return df.iloc[int(index_t_from): int(index_t_to)]
+    return df.iloc[int(index_t_from) : int(index_t_to)]
 
 
 __all__ = ['build_df', 'filter_df_by_dates', 'get_w']

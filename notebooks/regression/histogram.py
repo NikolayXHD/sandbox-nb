@@ -116,6 +116,70 @@ def plot_histogram_pairs(field_grps, **kwargs):
 
 
 # %%
+fig, ax = plt.subplots(figsize=(15, 15))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'score-dln-3d-24d',
+    'dln-3d-dln-24d-0-exp-3d',
+    ax=ax,
+    bins=(200, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
+fig, ax = plt.subplots(figsize=(20, 10))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'score-dln-3d-24d',
+    'profit_in_currency',
+    ax=ax,
+    bins=(200, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
+fig, ax = plt.subplots(figsize=(20, 10))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln-3d-dln-24d-0-exp-3d',
+    'profit_in_currency',
+    ax=ax,
+    bins=(200, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
+fig, ax = plt.subplots(figsize=(20, 10))
+
+plot_2d_hist(
+    delay_to_df[7],
+    7,
+    'dln-3d-dln-24d-0-exp-7d',
+    'profit_in_currency',
+    ax=ax,
+    bins=(200, 100),
+    plot_values=False,
+    log_color_scale=True,
+)
+
+plt.show()
+
+# %%
 fig, ax = plt.subplots(figsize=(20, 10))
 
 plot_2d_hist(

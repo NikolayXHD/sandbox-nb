@@ -17,7 +17,6 @@
 
 # %%
 def sim_range(min_val: float, max_val: float):  # type: ignore[no-redef]
-
     def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
         i1 = df['dln_log_3d'] / 0.7
         i2 = df['dln_log_24d'] / 0.6
@@ -32,7 +31,8 @@ for min_val, max_val in (
     (-1, 0.075),
     (0.075, 0.100),
     (0.100, 0.125),
-    (0.125, 0.225),
+    (0.125, 0.175),
+    (0.175, 0.225),
     (0.225, 1),
 ):
     sim_range(min_val, max_val)
@@ -43,7 +43,7 @@ for min_val, max_val in (
 
 # %%
 def sim_ranges():  # type: ignore[no-redef]
-    values = [-1, *np.arange(-0.25, 0.25, 0.025), 1]
+    values = [-1, *np.arange(-0.25, 0.25, 0.05), 1]
     for min_val, max_val in zip(values, values[1:]):
 
         def _get_score(  # type: ignore[no-redef]
@@ -68,6 +68,7 @@ sim_ranges()
 # %%
 def sim_range():  # type: ignore[no-redef]
     min_val = 0.0215
+
     def _get_score(df: pd.DataFrame) -> np.ndarray:  # type: ignore[no-redef]
         i1 = df['dln_log_3d'] * (0.54 / 0.7)
         i2 = df['dln_log_24d'] * (0.46 / 0.6)

@@ -131,7 +131,7 @@ update_delay_to_df()
 
 
 # %%
-def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
+def append_log_indicators(df: pd.DataFrame) -> None:
     for duration in durations:
         for indicator, scale in zip(
             ('adv', 'ad', 'dlnv', 'dln'), (3, 3, 1000, 1000)
@@ -140,12 +140,7 @@ def append_log_indicators(df: pd.DataFrame) -> pd.DataFrame:
                 df.loc[:, f'{indicator}_log_{duration}'] = log_scale_value(
                     df[f'{indicator}_{duration}'], scale
                 )
-                df.drop(f'{indicator}_{duration}', axis=1)
-    # i1 = df['dln_log_3d'] / 0.7
-    # i2 = df['dln_log_24d'] / 0.6
-    # hyperbolic_score = i2 ** 2 - i1 ** 2
-    # df.loc[:, 'score'] = hyperbolic_score
-    return df
+                df.drop(f'{indicator}_{duration}', axis=1, inplace=True)
 
 
 def log_scale_value(values: np.ndarray, scale: float) -> np.ndarray:
@@ -159,7 +154,41 @@ for df in delay_to_df_validate.values():
     append_log_indicators(df)
 update_delay_to_df()
 
+
 # %%
+def append_score_dln_3d_24d(df: pd.DataFrame) -> None:
+    i1 = df['dln_log_3d'] / 0.7
+    i2 = df['dln_log_24d'] / 0.6
+    hyperbolic_score = i2 ** 2 - i1 ** 2
+    df.loc[:, 'score-dln-3d-24d'] = hyperbolic_score
+
+
+for df in delay_to_df_validate.values():
+    append_score_dln_3d_24d(df)
+update_delay_to_df()
+
+
+# %%
+def append_score_dln_3d_72d(df: pd.DataFrame) -> None:
+    i1 = df['dln_log_3d'] / 0.7
+    i2 = df['dln_log_72d'] / 0.6
+    hyperbolic_score = i2 ** 2 - i1 ** 2
+    df.loc[:, 'score-dln-3d-72d'] = hyperbolic_score
+
+
+for df in delay_to_df_validate.values():
+    append_score_dln_3d_72d(df)
+update_delay_to_df()
+
+# %%
+for delay, path in delay_to_dir.items():
+    score_fields = ['dln-3d-dln-24d-0-exp-3d', 'dln-3d-dln-24d-0-exp-7d']
+    df_scores = build_df(path, max_list_level=2, fields=['t', *score_fields])
+    df = delay_to_df_validate[delay]
+    for score_field in score_fields:
+        df.loc[:, score_field] = df_scores.loc[:, score_field]
+
+update_delay_to_df()
 
 # %%
 delay_to_df[7]
